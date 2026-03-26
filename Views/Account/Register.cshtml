@@ -1,0 +1,90 @@
+@model WebApp1.ViewModels.RegisterViewModel
+@{
+    Layout = "_CustomerNavbar";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/CustomerLogin.css" asp-append-version="true" />
+}
+
+<div class="customer-login-page">
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-12 col-sm-10 col-md-7 col-lg-5 col-xl-4">
+                <div class="card login-card border-0">
+                    <div class="card-body p-4 p-md-5">
+                        <div class="text-center mb-4">
+                            <h2 class="login-title mb-1">SIGN UP</h2>
+                            <div class="login-subtitle">Create your account</div>
+                        </div>
+
+                        <form asp-controller="Account" asp-action="Register" method="post"
+                              novalidate>
+                            @Html.AntiForgeryToken()
+
+                            <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
+
+                            <div class="row g-3 mb-3">
+                                <div class="col-12 col-md-6">
+                                    <label asp-for="Name" class="form-label login-label">Name</label>
+                                    <input asp-for="Name" type="text" class="form-control login-control"
+                                           placeholder="Name" autocomplete="given-name" />
+                                    
+                                </div>
+                                <div class="col-12 col-md-6">
+                                    <label asp-for="LastName" class="form-label login-label">Last Name</label>
+                                    <input asp-for="LastName" type="text" class="form-control login-control"
+                                           placeholder="Last Name" autocomplete="family-name" />
+                                   
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="Email" class="form-label login-label">Email</label>
+                                <input asp-for="Email" type="email" class="form-control login-control"
+                                       placeholder="Your Email" autocomplete="email" />
+                                <span asp-validation-for="Email" class="text-danger small"></span>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="Password" class="form-label login-label">Password</label>
+                                <input asp-for="Password" type="password" class="form-control login-control"
+                                       placeholder="Password" autocomplete="new-password" />
+                                <span asp-validation-for="Password" class="text-danger small"></span>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="ConfirmPassword" class="form-label login-label">Confirm Password</label>
+                                <input asp-for="ConfirmPassword" type="password" class="form-control login-control"
+                                       placeholder="Confirm Password" autocomplete="new-password" />
+                                <span asp-validation-for="ConfirmPassword" class="text-danger small"></span>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="PhoneNumber" class="form-label login-label">Phone Number</label>
+                                <input asp-for="PhoneNumber" type="tel" class="form-control login-control"
+                                       placeholder="Phone Number" autocomplete="tel" />
+                                <span asp-validation-for="PhoneNumber" class="text-danger small"></span>
+                            </div>
+
+                            <div class="mb-4">
+                                <label asp-for="DateOfBirth" class="form-label login-label">BirthDate</label>
+                                <input asp-for="DateOfBirth" type="date" class="form-control login-control"
+                                       autocomplete="bday" />
+                                <span asp-validation-for="DateOfBirth" class="text-danger small"></span>
+                            </div>
+
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-login w-100">Sign Up</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,21 @@
+@model WebApp1.Models.Db.Customer
+
+<div>
+    <form asp-action="Lab10" asp-controller="Home" method="post">
+        <input asp-for="UserId" type="hidden" />
+
+        <label asp-for="UserId"></label>
+        <input asp-for="UserId" class="form-control" readonly>
+
+        <label asp-for="NameCustomer" class="mt-2"></label>
+        <input asp-for="NameCustomer" class="form-control">
+
+        <label asp-for="LastnameCustomer" class="mt-2"></label>
+        <input asp-for="LastnameCustomer" class="form-control">
+
+        <label asp-for="Password" class="mt-2"></label>
+        <input asp-for="Password" type="password" class="form-control">
+
+        <button type="submit" class="btn btn-primary mt-2">Submit</button>
+    </form>
+</div>

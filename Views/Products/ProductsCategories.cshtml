@@ -1,0 +1,654 @@
+@model List<WebApp1.ViewModels.CategoryViewModel>
+@{
+    Layout = "_AdminLayout";
+    var totalCategories = Model.Count;
+    // Group: parents first, then children under each parent
+    var parents = Model.Where(c => c.ParentId == null).ToList();
+    var children = Model.Where(c => c.ParentId != null).GroupBy(c => c.ParentId).ToDictionary(g => g.Key!.Value, g => g.ToList());
+}
+
+<link rel="stylesheet" href="~/css/ProductCategoriesStyle.css" asp-append-version="true" />
+
+<div class="categories-page">
+
+    <!-- ===== Page Header ===== -->
+    <div class="page-header">
+        <div>
+            <h2 class="page-title">Categories</h2>
+            <p class="page-subtitle">Organize and manage your product categories</p>
+        </div>
+        <div class="actions">
+            <button class="btn-add" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
+                <i class="bi bi-plus-lg"></i> Add Category
+            </button>
+        </div>
+    </div>
+
+    <!-- ===== Filter Bar ===== -->
+    <div class="filter-bar">
+        <div class="search-box">
+            <i class="bi bi-search search-icon"></i>
+            <input type="text" id="filterSearch" placeholder="Search categories…" />
+        </div>
+        <select id="filterStatus">
+            <option value="">All Status</option>
+            <option value="Active">Active</option>
+            <option value="Inactive">Inactive</option>
+        </select>
+        <select id="filterType">
+            <option value="">All Types</option>
+            <option value="parent">Parent Category</option>
+            <option value="sub">Sub-category</option>
+        </select>
+    </div>
+
+    <!-- ===== Table Card ===== -->
+    <div class="table-card">
+        <div class="table-header">
+            <span>All Categories</span>
+            <span class="record-count" id="recordCount">@totalCategories categor@(totalCategories == 1 ? "y" : "ies")</span>
+        </div>
+        <div class="table-wrapper">
+            <table class="category-table" id="categoriesTable">
+                <thead>
+                    <tr>
+                        <th>Category Name</th>
+                        <th>Type</th>
+                        <th>Status</th>
+                        <th>Created Date</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var parent in parents)
+                    {
+                        var pStatus = parent.IsActive == true ? "Active" : "Inactive";
+                        var pStatusClass = parent.IsActive == true ? "active" : "inactive";
+                        <tr class="row-parent" data-id="@parent.CategoryId" data-name="@parent.CategoryName"
+                            data-status="@pStatus" data-type="parent" data-parent="">
+                            <td>
+                                <div class="cat-name cat-name-parent">
+                                    <button class="toggle-children" data-group="@parent.CategoryId" title="Toggle sub-categories">
+                                        <i class="bi bi-chevron-down"></i>
+                                    </button>
+                                    <i class="bi bi-folder-fill cat-icon"></i>
+                                    @parent.CategoryName
+                                </div>
+                            </td>
+                            <td><span class="type-badge type-parent">Parent</span></td>
+                            <td><span class="status-pill @pStatusClass">@pStatus</span></td>
+                            <td>@parent.CreatedAt</td>
+                            <td>
+                                <div class="table-actions">
+                                    <button class="btn-action" title="Edit"><i class="bi bi-pencil"></i></button>
+                                    <button class="btn-action btn-danger" title="Delete"><i class="bi bi-trash3"></i></button>
+                                </div>
+                            </td>
+                        </tr>
+                        @if (children.ContainsKey(parent.CategoryId))
+                        {
+                            foreach (var child in children[parent.CategoryId])
+                            {
+                                var cStatus = child.IsActive == true ? "Active" : "Inactive";
+                                var cStatusClass = child.IsActive == true ? "active" : "inactive";
+                                <tr class="row-child" data-id="@child.CategoryId" data-name="@child.CategoryName"
+                                    data-status="@cStatus" data-type="sub" data-parent="@parent.CategoryId"
+                                    data-parent-name="@parent.CategoryName">
+                                    <td>
+                                        <div class="cat-name cat-name-child">
+                                            <span class="child-line"></span>
+                                            <i class="bi bi-folder2 cat-icon"></i>
+                                            @child.CategoryName
+                                        </div>
+                                    </td>
+                                    <td><span class="type-badge type-sub">Sub</span></td>
+                                    <td><span class="status-pill @cStatusClass">@cStatus</span></td>
+                                    <td>@child.CreatedAt</td>
+                                    <td>
+                                        <div class="table-actions">
+                                            <button class="btn-action" title="Edit"><i class="bi bi-pencil"></i></button>
+                                            <button class="btn-action btn-danger" title="Delete"><i class="bi bi-trash3"></i></button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="empty-state" id="categoriesEmpty" style="display:@(totalCategories == 0 ? "" : "none");">No categories match your filters.</div>
+    </div>
+</div>
+
+<!-- ===== Add Category Modal ===== -->
+<div class="modal fade" id="addCategoryModal" tabindex="-1" aria-labelledby="addCategoryLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content category-modal">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addCategoryLabel">Add Category</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="addCategoryForm">
+
+                    <!-- Step 1: choose type -->
+                    <div class="form-group">
+                        <label>Category Type</label>
+                        <div class="type-selector">
+                            <label class="type-option selected" id="optParent">
+                                <input type="radio" name="catType" value="parent" checked />
+                                <div class="type-card">
+                                    <i class="bi bi-folder-fill"></i>
+                                    <span class="type-label">Parent Category</span>
+                                    <span class="type-desc">Top-level group (e.g. Footwear, Apparel)</span>
+                                </div>
+                            </label>
+                            <label class="type-option" id="optSub">
+                                <input type="radio" name="catType" value="sub" />
+                                <div class="type-card">
+                                    <i class="bi bi-folder2"></i>
+                                    <span class="type-label">Sub-category</span>
+                                    <span class="type-desc">Belongs under a parent (e.g. Running Shoes)</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Category Name -->
+                    <div class="form-group">
+                        <label for="catName">Category Name</label>
+                        <input type="text" id="catName" placeholder="e.g. Running Shoes" required />
+                    </div>
+
+                    <!-- Parent (only for sub-category) -->
+                    <div class="form-group" id="parentGroup" style="display:none;">
+                        <label for="catParent">Parent Category</label>
+                        <select id="catParent">
+                            <!-- populated dynamically from existing parents -->
+                        </select>
+                        <small class="form-hint">Select which parent this sub-category belongs to</small>
+                    </div>
+
+                    <!-- Status -->
+                    <div class="form-group">
+                        <label for="catStatus">Status</label>
+                        <select id="catStatus">
+                            <option value="Active">Active</option>
+                            <option value="Inactive">Inactive</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-cancel" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn-save" id="addSaveBtn">Save Category</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== Edit Category Modal ===== -->
+<div class="modal fade" id="editCategoryModal" tabindex="-1" aria-labelledby="editCategoryLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content category-modal">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editCategoryLabel">Edit Category</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editCategoryForm">
+                    <input type="hidden" id="editCatId" />
+
+                    <!-- Type -->
+                    <div class="form-group">
+                        <label>Category Type</label>
+                        <div class="type-selector">
+                            <label class="type-option selected" id="editOptParent">
+                                <input type="radio" name="editCatType" value="parent" checked />
+                                <div class="type-card">
+                                    <i class="bi bi-folder-fill"></i>
+                                    <span class="type-label">Parent Category</span>
+                                    <span class="type-desc">Top-level group (e.g. Footwear, Apparel)</span>
+                                </div>
+                            </label>
+                            <label class="type-option" id="editOptSub">
+                                <input type="radio" name="editCatType" value="sub" />
+                                <div class="type-card">
+                                    <i class="bi bi-folder2"></i>
+                                    <span class="type-label">Sub-category</span>
+                                    <span class="type-desc">Belongs under a parent (e.g. Running Shoes)</span>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Category Name -->
+                    <div class="form-group">
+                        <label for="editCatName">Category Name</label>
+                        <input type="text" id="editCatName" placeholder="e.g. Running Shoes" required />
+                    </div>
+
+                    <!-- Parent (only for sub-category) -->
+                    <div class="form-group" id="editParentGroup" style="display:none;">
+                        <label for="editCatParent">Parent Category</label>
+                        <select id="editCatParent"></select>
+                        <small class="form-hint">Select which parent this sub-category belongs to</small>
+                    </div>
+
+                    <!-- Status -->
+                    <div class="form-group">
+                        <label for="editCatStatus">Status</label>
+                        <select id="editCatStatus">
+                            <option value="Active">Active</option>
+                            <option value="Inactive">Inactive</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-cancel" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn-save" id="editSaveBtn">Update Category</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== Delete Confirm Modal ===== -->
+<div class="modal fade" id="deleteCategoryModal" tabindex="-1" aria-labelledby="deleteCategoryLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content category-modal">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteCategoryLabel">Delete Category</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="delete-warning">
+                    <i class="bi bi-exclamation-triangle-fill"></i>
+                    <p>Are you sure you want to delete <strong id="deleteTargetName"></strong>?</p>
+                    <small>This action cannot be undone.</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-cancel" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn-delete-confirm" id="confirmDeleteBtn">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== Scripts ===== -->
+<script>
+    (function () {
+        var table      = document.getElementById('categoriesTable');
+        var tbody      = table ? table.querySelector('tbody') : null;
+        var rows       = tbody ? Array.from(tbody.querySelectorAll('tr')) : [];
+        var emptyState = document.getElementById('categoriesEmpty');
+        var countLabel = document.getElementById('recordCount');
+
+        /* ---------- Toggle children rows ---------- */
+        function attachToggle(btn) {
+            btn.addEventListener('click', function () {
+                var group    = btn.dataset.group;
+                var icon     = btn.querySelector('i');
+                var children = document.querySelectorAll('tr.row-child[data-parent="' + group + '"]');
+                var isOpen   = !btn.classList.contains('collapsed');
+
+                if (isOpen) {
+                    btn.classList.add('collapsed');
+                    icon.classList.replace('bi-chevron-down', 'bi-chevron-right');
+                    children.forEach(function (r) { r.classList.add('child-hidden'); });
+                } else {
+                    btn.classList.remove('collapsed');
+                    icon.classList.replace('bi-chevron-right', 'bi-chevron-down');
+                    children.forEach(function (r) { r.classList.remove('child-hidden'); });
+                }
+            });
+        }
+
+        document.querySelectorAll('.toggle-children').forEach(attachToggle);
+
+        /* ---------- Filter ---------- */
+        var searchInput  = document.getElementById('filterSearch');
+        var statusSelect = document.getElementById('filterStatus');
+        var typeSelect   = document.getElementById('filterType');
+
+        function applyFilters() {
+            var search  = searchInput.value.trim().toLowerCase();
+            var status  = statusSelect.value;
+            var type    = typeSelect.value;
+            var visible = 0;
+
+            rows.forEach(function (row) {
+                var rName   = (row.dataset.name   || '').toLowerCase();
+                var rStatus = row.dataset.status   || '';
+                var rType   = row.dataset.type     || '';
+
+                var matchSearch = !search || rName.includes(search);
+                var matchStatus = !status || rStatus === status;
+                var matchType   = !type   || rType === type;
+
+                if (matchSearch && matchStatus && matchType) {
+                    row.style.display = '';
+                    visible++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            countLabel.textContent = visible + ' categor' + (visible === 1 ? 'y' : 'ies');
+            emptyState.style.display = visible === 0 ? '' : 'none';
+        }
+
+        searchInput.addEventListener('input', applyFilters);
+        statusSelect.addEventListener('change', applyFilters);
+        typeSelect.addEventListener('change', applyFilters);
+
+        /* ---------- Modal: type selector ---------- */
+        var radios      = document.querySelectorAll('input[name="catType"]');
+        var parentGroup = document.getElementById('parentGroup');
+        var optParent   = document.getElementById('optParent');
+        var optSub      = document.getElementById('optSub');
+        var catParent   = document.getElementById('catParent');
+
+        radios.forEach(function (radio) {
+            radio.addEventListener('change', function () {
+                var isSub = radio.value === 'sub';
+                parentGroup.style.display = isSub ? '' : 'none';
+                optParent.classList.toggle('selected', !isSub);
+                optSub.classList.toggle('selected', isSub);
+                if (isSub) populateParentDropdown(catParent);
+            });
+        });
+
+        function populateParentDropdown(selectEl, selectedId) {
+            var parents = document.querySelectorAll('tr.row-parent');
+            selectEl.innerHTML = '';
+            parents.forEach(function (p) {
+                var id   = p.dataset.id;
+                var name = p.dataset.name;
+                var opt  = document.createElement('option');
+                opt.value = id;
+                opt.textContent = name;
+                if (String(id) === String(selectedId)) opt.selected = true;
+                selectEl.appendChild(opt);
+            });
+        }
+
+        /* Reset form when modal opens */
+        var addModal = document.getElementById('addCategoryModal');
+        if (addModal) {
+            addModal.addEventListener('show.bs.modal', function () {
+                document.getElementById('addCategoryForm').reset();
+                parentGroup.style.display = 'none';
+                optParent.classList.add('selected');
+                optSub.classList.remove('selected');
+            });
+        }
+
+        /* ---------- Attach row events ---------- */
+        function attachRowEvents(row) {
+            var editBtn   = row.querySelector('.btn-action[title="Edit"]');
+            var deleteBtn = row.querySelector('.btn-action[title="Delete"]');
+
+            if (editBtn) {
+                editBtn.addEventListener('click', function () {
+                    openEditModal(row);
+                });
+            }
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', function () {
+                    openDeleteModal(row);
+                });
+            }
+        }
+
+        rows.forEach(attachRowEvents);
+
+        /* ---------- Add Category (DB) ---------- */
+        var addSaveBtn = document.getElementById('addSaveBtn');
+
+        addSaveBtn.addEventListener('click', function () {
+            var name     = document.getElementById('catName').value.trim();
+            var status   = document.getElementById('catStatus').value;
+            var typeVal  = document.querySelector('input[name="catType"]:checked').value;
+            var parentId = typeVal === 'sub' ? parseInt(catParent.value) : null;
+
+            if (!name) {
+                document.getElementById('catName').focus();
+                return;
+            }
+
+            addSaveBtn.disabled = true;
+            addSaveBtn.textContent = 'Saving…';
+
+            fetch('/Products/AddCategory', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    categoryName: name,
+                    parentId: parentId,
+                    isActive: status === 'Active'
+                })
+            })
+            .then(function (res) { return res.json(); })
+            .then(function (data) {
+                if (!data.success) {
+                    alert(data.message);
+                    return;
+                }
+
+                var c = data.category;
+                var statusText  = c.isActive ? 'Active' : 'Inactive';
+                var statusClass = c.isActive ? 'active' : 'inactive';
+                var isParent    = c.parentId === null;
+                var rowClass    = isParent ? 'row-parent' : 'row-child';
+
+                var newRow = document.createElement('tr');
+                newRow.className = rowClass;
+                newRow.dataset.id     = c.categoryId;
+                newRow.dataset.name   = c.categoryName;
+                newRow.dataset.status = statusText;
+                newRow.dataset.type   = isParent ? 'parent' : 'sub';
+                newRow.dataset.parent = isParent ? '' : c.parentId;
+                if (!isParent) newRow.dataset.parentName = c.parentName || '';
+
+                if (isParent) {
+                    newRow.innerHTML =
+                        '<td><div class="cat-name cat-name-parent">' +
+                            '<button class="toggle-children" data-group="' + c.categoryId + '" title="Toggle sub-categories">' +
+                                '<i class="bi bi-chevron-down"></i>' +
+                            '</button>' +
+                            '<i class="bi bi-folder-fill cat-icon"></i>' + escHtml(c.categoryName) +
+                        '</div></td>' +
+                        '<td><span class="type-badge type-parent">Parent</span></td>' +
+                        '<td><span class="status-pill ' + statusClass + '">' + statusText + '</span></td>' +
+                        '<td>' + c.createdAt + '</td>' +
+                        '<td><div class="table-actions">' +
+                            '<button class="btn-action" title="Edit"><i class="bi bi-pencil"></i></button>' +
+                            '<button class="btn-action btn-danger" title="Delete"><i class="bi bi-trash3"></i></button>' +
+                        '</div></td>';
+                    tbody.appendChild(newRow);
+                    // Attach toggle for new parent
+                    var toggleBtn = newRow.querySelector('.toggle-children');
+                    if (toggleBtn) attachToggle(toggleBtn);
+                } else {
+                    newRow.innerHTML =
+                        '<td><div class="cat-name cat-name-child">' +
+                            '<span class="child-line"></span>' +
+                            '<i class="bi bi-folder2 cat-icon"></i>' + escHtml(c.categoryName) +
+                        '</div></td>' +
+                        '<td><span class="type-badge type-sub">Sub</span></td>' +
+                        '<td><span class="status-pill ' + statusClass + '">' + statusText + '</span></td>' +
+                        '<td>' + c.createdAt + '</td>' +
+                        '<td><div class="table-actions">' +
+                            '<button class="btn-action" title="Edit"><i class="bi bi-pencil"></i></button>' +
+                            '<button class="btn-action btn-danger" title="Delete"><i class="bi bi-trash3"></i></button>' +
+                        '</div></td>';
+
+                    // Insert after the last child of the same parent, or after the parent row
+                    var parentRow = tbody.querySelector('tr.row-parent[data-id="' + c.parentId + '"]');
+                    var siblings  = tbody.querySelectorAll('tr.row-child[data-parent="' + c.parentId + '"]');
+                    var insertAfter = siblings.length > 0 ? siblings[siblings.length - 1] : parentRow;
+                    if (insertAfter && insertAfter.nextSibling) {
+                        tbody.insertBefore(newRow, insertAfter.nextSibling);
+                    } else {
+                        tbody.appendChild(newRow);
+                    }
+                }
+
+                rows.push(newRow);
+                attachRowEvents(newRow);
+                applyFilters();
+
+                bootstrap.Modal.getInstance(addModal).hide();
+            })
+            .catch(function () { alert('An error occurred while saving.'); })
+            .finally(function () {
+                addSaveBtn.disabled = false;
+                addSaveBtn.textContent = 'Save Category';
+            });
+        });
+
+        /* ---------- Edit Category (DB) ---------- */
+        var editModal      = document.getElementById('editCategoryModal');
+        var editSaveBtn    = document.getElementById('editSaveBtn');
+        var editParentGrp  = document.getElementById('editParentGroup');
+        var editParentSel  = document.getElementById('editCatParent');
+        var editOptParent  = document.getElementById('editOptParent');
+        var editOptSub     = document.getElementById('editOptSub');
+        var editRadios     = document.querySelectorAll('input[name="editCatType"]');
+        var editingRow     = null;
+
+        editRadios.forEach(function (radio) {
+            radio.addEventListener('change', function () {
+                var isSub = radio.value === 'sub';
+                editParentGrp.style.display = isSub ? '' : 'none';
+                editOptParent.classList.toggle('selected', !isSub);
+                editOptSub.classList.toggle('selected', isSub);
+                if (isSub) populateParentDropdown(editParentSel);
+            });
+        });
+
+        function openEditModal(row) {
+            editingRow = row;
+            document.getElementById('editCatId').value    = row.dataset.id;
+            document.getElementById('editCatName').value  = row.dataset.name;
+            document.getElementById('editCatStatus').value = row.dataset.status;
+
+            var type = row.dataset.type;
+            if (type === 'sub') {
+                editRadios.forEach(function (r) { r.checked = r.value === 'sub'; });
+                editOptParent.classList.remove('selected');
+                editOptSub.classList.add('selected');
+                editParentGrp.style.display = '';
+                populateParentDropdown(editParentSel, row.dataset.parent);
+            } else {
+                editRadios.forEach(function (r) { r.checked = r.value === 'parent'; });
+                editOptParent.classList.add('selected');
+                editOptSub.classList.remove('selected');
+                editParentGrp.style.display = 'none';
+            }
+
+            var bsModal = new bootstrap.Modal(editModal);
+            bsModal.show();
+        }
+
+        editSaveBtn.addEventListener('click', function () {
+            if (!editingRow) return;
+
+            var catId    = document.getElementById('editCatId').value;
+            var name     = document.getElementById('editCatName').value.trim();
+            var status   = document.getElementById('editCatStatus').value;
+            var typeVal  = document.querySelector('input[name="editCatType"]:checked').value;
+            var parentId = typeVal === 'sub' ? parseInt(editParentSel.value) : null;
+
+            if (!name) {
+                document.getElementById('editCatName').focus();
+                return;
+            }
+
+            editSaveBtn.disabled = true;
+            editSaveBtn.textContent = 'Updating…';
+
+            fetch('/Products/EditCategory', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    categoryId: parseInt(catId),
+                    categoryName: name,
+                    parentId: parentId,
+                    isActive: status === 'Active'
+                })
+            })
+            .then(function (res) { return res.json(); })
+            .then(function (data) {
+                if (!data.success) {
+                    alert(data.message);
+                    return;
+                }
+
+                // Reload the page to reflect structural changes (parent/child reordering)
+                window.location.reload();
+            })
+            .catch(function () { alert('An error occurred while updating.'); })
+            .finally(function () {
+                editSaveBtn.disabled = false;
+                editSaveBtn.textContent = 'Update Category';
+            });
+        });
+
+        /* ---------- Delete Category (DB) ---------- */
+        var deleteModal      = document.getElementById('deleteCategoryModal');
+        var confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+        var deletingRow      = null;
+
+        function openDeleteModal(row) {
+            deletingRow = row;
+            document.getElementById('deleteTargetName').textContent = row.dataset.name;
+
+            var bsModal = new bootstrap.Modal(deleteModal);
+            bsModal.show();
+        }
+
+        confirmDeleteBtn.addEventListener('click', function () {
+            if (!deletingRow) return;
+
+            var catId = deletingRow.dataset.id;
+            confirmDeleteBtn.disabled = true;
+            confirmDeleteBtn.textContent = 'Deleting…';
+
+            fetch('/Products/DeleteCategory', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ categoryId: parseInt(catId) })
+            })
+            .then(function (res) { return res.json(); })
+            .then(function (data) {
+                if (!data.success) {
+                    alert(data.message);
+                    return;
+                }
+
+                deletingRow.remove();
+                rows = rows.filter(function (r) { return r !== deletingRow; });
+                applyFilters();
+
+                bootstrap.Modal.getInstance(deleteModal).hide();
+                deletingRow = null;
+            })
+            .catch(function () { alert('An error occurred while deleting.'); })
+            .finally(function () {
+                confirmDeleteBtn.disabled = false;
+                confirmDeleteBtn.textContent = 'Delete';
+            });
+        });
+
+        /* ---------- Helper ---------- */
+        function escHtml(str) {
+            var div = document.createElement('div');
+            div.appendChild(document.createTextNode(str));
+            return div.innerHTML;
+        }
+    })();
+</script>

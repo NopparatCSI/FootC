@@ -1,0 +1,236 @@
+@model WebApp1.ViewModels.ProductCustomerViewModel
+
+@{
+    Layout = "_CustomerNavbar";
+    ViewData["Title"] = Model.Name;
+
+    var hasSale = Model.SalePrice.HasValue && Model.SalePrice.Value > 0 && Model.SalePrice.Value < Model.RegularPrice;
+    var currentPrice = hasSale ? Model.SalePrice!.Value : Model.RegularPrice;
+    var oldPrice = hasSale ? Model.RegularPrice : (decimal?)null;
+    var discount = Model.DiscountPercent;
+
+    var thumbnail = string.IsNullOrWhiteSpace(Model.ThumbnailUrl)
+        ? "/images/Running-Shoe-2.jpeg"
+        : Model.ThumbnailUrl;
+
+    var allImages = new List<string> { thumbnail };
+    if (Model.GalleryUrls is { Count: > 0 })
+    {
+        allImages.AddRange(Model.GalleryUrls);
+    }
+    else
+    {
+        allImages.Add("/images/Untitled-design-5-2.jpg");
+        allImages.Add("/images/images.jpg");
+    }
+
+    var euSizes = new[] { "38", "38.5", "39", "40", "40.5", "41", "42", "42.5", "43", "44", "44.5", "45" };
+    var usSizes = new[] { "6", "6.5", "7", "7.5", "8", "8.5", "9", "9.5", "10", "10.5", "11", "11.5" };
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/CustomerProduct.css" asp-append-version="true" />
+}
+
+<div class="cp-page">
+
+    <!-- Breadcrumb -->
+    <ul class="cp-breadcrumb">
+        <li><a href="/">Home</a></li>
+        <li><a href="#">@Model.Category</a></li>
+        <li><a href="#">@Model.Gender</a></li>
+        <li>@Model.Name</li>
+    </ul>
+
+    <!-- ==================== HERO ==================== -->
+    <div class="cp-hero">
+
+        <!-- LEFT: images -->
+        <div class="cp-images">
+            <div class="cp-thumbs">
+                @for (int i = 0; i < allImages.Count; i++)
+                {
+                    <img class="cp-thumb @(i == 0 ? "active" : "")"
+                         src="@allImages[i]" alt="thumb @(i+1)"
+                         onclick="setMainImage(this)" />
+                }
+            </div>
+            <div class="cp-main-img-wrap">
+                <img class="cp-main-img" id="mainImage" src="@allImages[0]" alt="@Model.Name" />
+                @if (hasSale && discount.HasValue && discount.Value > 0)
+                {
+                    <span class="cp-badge-sale">-@discount.Value.ToString("0.##")%</span>
+                }
+            </div>
+        </div>
+
+        <!-- RIGHT: info -->
+        <div class="cp-info">
+            <p class="cp-category-label">@Model.Brand &nbsp;·&nbsp; @Model.Category</p>
+            <h1 class="cp-product-name">@Model.Name</h1>
+
+            <p class="cp-gender-label">@Model.Gender's Shoes</p>
+
+            <div class="cp-price-block">
+                <span class="cp-price-now">฿@currentPrice.ToString("N0")</span>
+                @if (oldPrice.HasValue)
+                {
+                    <span class="cp-price-was">฿@oldPrice.Value.ToString("N0")</span>
+                }
+                @if (hasSale && discount.HasValue && discount.Value > 0)
+                {
+                    <span class="cp-price-off">@discount.Value.ToString("0.##")% off</span>
+                }
+            </div>
+
+            <!-- Color swatches -->
+            @if (Model.ColorNames is { Count: > 0 })
+            {
+                <div class="cp-color-section">
+                    <div class="cp-label">Color — <span id="selectedColor">@Model.ColorNames[0]</span></div>
+                    <div class="cp-swatches">
+                        @foreach (var color in Model.ColorNames)
+                        {
+                            <button type="button"
+                                    class="cp-swatch @(color == Model.ColorNames[0] ? "active" : "")"
+                                    onclick="pickColor(this, '@color')">
+                                <span class="cp-swatch-label">@color</span>
+                            </button>
+                        }
+                    </div>
+                </div>
+            }
+
+            <!-- Size grid -->
+            <div class="cp-size-section">
+                <div class="cp-size-header">
+                    <div class="cp-label">Select Size</div>
+                    <span class="cp-size-guide">Size Guide</span>
+                </div>
+
+                <div class="cp-size-type-tabs">
+                    <button class="cp-size-type-tab active" onclick="switchSizeType(this,'EU')">EU</button>
+                    <button class="cp-size-type-tab" onclick="switchSizeType(this,'US')">US</button>
+                </div>
+
+                <div class="cp-size-grid" id="sizeGrid">
+                    @foreach (var s in euSizes)
+                    {
+                        <button type="button" class="cp-size-btn" onclick="pickSize(this)">@s</button>
+                    }
+                </div>
+            </div>
+
+            <!-- Quantity -->
+            <div class="cp-qty-section">
+                <div class="cp-label" style="margin-bottom:0;">Quantity</div>
+                <button type="button" class="cp-qty-btn" onclick="changeQty(-1)">−</button>
+                <input type="text" class="cp-qty-value" id="qtyValue" value="1" readonly />
+                <button type="button" class="cp-qty-btn" onclick="changeQty(1)">+</button>
+            </div>
+
+            <!-- CTA -->
+            <div class="cp-actions">
+                <button type="button" class="cp-btn-bag">Add to Bag</button>
+                <button type="button" class="cp-btn-fav">
+                    <i class="bi bi-heart"></i> Favorite
+                </button>
+            </div>
+
+            <div class="cp-stock-note">
+                <span class="cp-stock-dot"></span> In stock — Free shipping on orders over ฿2,500
+            </div>
+
+            <!-- Short description (inline) -->
+            <div class="cp-short-desc">
+                @Model.ShortDescription
+            </div>
+        </div>
+
+    </div>
+    <!-- /hero -->
+
+    <!-- ==================== DETAIL CARDS ==================== -->
+    <div class="cp-details">
+
+        @if (!string.IsNullOrWhiteSpace(Model.FullDescription))
+        {
+            <div class="cp-detail-card">
+                <h4 class="cp-detail-title">Description</h4>
+                <p>@Model.FullDescription</p>
+            </div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(Model.HighlightFeaturesHtml))
+        {
+            <div class="cp-detail-card">
+                <h4 class="cp-detail-title">Highlights</h4>
+                @Html.Raw(Model.HighlightFeaturesHtml)
+            </div>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(Model.TechnicalDetails))
+        {
+            <div class="cp-detail-card">
+                <h4 class="cp-detail-title">Technical Details</h4>
+                <div class="cp-specs">
+                    @foreach (var item in (Model.TechnicalDetails ?? "").Split(';', StringSplitOptions.RemoveEmptyEntries))
+                    {
+                        <span class="cp-spec-chip">@item.Trim()</span>
+                    }
+                </div>
+            </div>
+        }
+
+    </div>
+</div>
+
+@section Scripts {
+<script>
+(function () {
+    // ---------- thumbnail → main image ----------
+    window.setMainImage = function (thumb) {
+        document.getElementById('mainImage').src = thumb.src;
+        document.querySelectorAll('.cp-thumb').forEach(t => t.classList.remove('active'));
+        thumb.classList.add('active');
+    };
+
+    // ---------- color swatch ----------
+    window.pickColor = function (btn, name) {
+        document.querySelectorAll('.cp-swatch').forEach(s => s.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById('selectedColor').textContent = name;
+    };
+
+    // ---------- size type tabs ----------
+    const euSizes = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(euSizes));
+    const usSizes = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(usSizes));
+
+    window.switchSizeType = function (tab, type) {
+        document.querySelectorAll('.cp-size-type-tab').forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+
+        const grid = document.getElementById('sizeGrid');
+        const sizes = type === 'US' ? usSizes : euSizes;
+        grid.innerHTML = sizes.map(s =>
+            '<button type="button" class="cp-size-btn" onclick="pickSize(this)">' + s + '</button>'
+        ).join('');
+    };
+
+    // ---------- size pick ----------
+    window.pickSize = function (btn) {
+        if (btn.classList.contains('disabled')) return;
+        document.querySelectorAll('.cp-size-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+    };
+
+    // ---------- quantity ----------
+    window.changeQty = function (d) {
+        const el = document.getElementById('qtyValue');
+        let v = parseInt(el.value) || 1;
+        v = Math.max(1, v + d);
+        el.value = v;
+    };
+})();
+</script>
+}

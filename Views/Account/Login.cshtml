@@ -1,0 +1,64 @@
+@model WebApp1.ViewModels.LoginUserViewModels
+@{
+    Layout = "_CustomerNavbar";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/CustomerLogin.css" asp-append-version="true" />
+}
+
+<div class="customer-login-page">
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-12 col-sm-10 col-md-7 col-lg-5 col-xl-4">
+                <div class="card login-card border-0">
+                    <div class="card-body p-4 p-md-5">
+                        <div class="text-center mb-4">
+                            <h2 class="login-title mb-1">SIGN IN</h2>
+                            <div class="login-subtitle">Sign in to your account</div>
+                        </div>
+
+                        <form asp-controller="Account" asp-action="Login" method="post" novalidate>
+                            @Html.AntiForgeryToken()
+
+                            <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
+
+                            <div class="mb-3">
+                                <label asp-for="Email" class="form-label login-label">Email</label>
+                                <input asp-for="Email" type="email" class="form-control login-control" placeholder="Email" autocomplete="email" />
+                                <span asp-validation-for="Email" class="text-danger small"></span>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="Password" class="form-label login-label">Password</label>
+                                <input asp-for="Password" type="password" class="form-control login-control" placeholder="Password" autocomplete="current-password" />
+                                <span asp-validation-for="Password" class="text-danger small"></span>
+                            </div>
+
+                            <div class="d-flex align-items-center justify-content-between mb-4">
+                                <div class="form-check">
+                                    <input class="form-check-input login-check" type="checkbox" value="true" id="rememberMe" name="rememberMe" />
+                                    <label class="form-check-label login-check-label" for="rememberMe">Remember me</label>
+                                </div>
+                                <a class="login-link" asp-controller="Account" asp-action="ForgotPassword">Forgot Password</a>
+                            </div>
+
+                            <div class="row g-3">
+                                <div class="col-6 d-grid">
+                                    <button type="submit" class="btn btn-login">Sign In</button>
+                                </div>
+                                <div class="col-6 d-grid">
+                                    <button type="button" class="btn btn-login" onclick="location.href='@Url.Action("Register", "Account")'">Sign Up</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,848 @@
+@using WebApp1.ViewModels
+@model ProductEditViewModel
+@{
+  Layout = "_AdminLayout";
+}
+
+<link rel="stylesheet" href="~/css/ProductAddStyle.css" asp-append-version="true" />
+
+<div class="form-wrapper">
+  <div class="form-card">
+
+    <!-- Header -->
+    <div class="form-header">
+      <h2>Edit Product</h2>
+      <p>Update the details below to modify this product</p>
+    </div>
+
+    <!-- Form Body -->
+    <div class="form-body">
+      <form action="/Products/EditProduct" method="post" id="productEditForm" enctype="multipart/form-data">
+        <input type="hidden" name="ProductId" value="@Model.ProductId" />
+
+        <!-- Basic Information -->
+        <div class="form-section">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="productName">Product Name *</label>
+              <input type="text" id="productName" name="ProductName" placeholder="Enter product name"
+                     value="@Model.ProductName" required />
+            </div>
+
+            <div class="form-group">
+              <label for="productSKU">SKU *</label>
+              <input type="text" id="productSKU" name="ProductSKU" placeholder="e.g., SHOE-001"
+                     value="@Model.ProductSKU" required />
+            </div>
+          </div>
+        </div>
+
+        <!-- Classification -->
+        <div class="form-section">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="productBrand">Brand *</label>
+              <select name="ProductBrand" id="productBrand" required>
+                <option value="">Select a brand</option>
+                @foreach (var b in Model.Brands)
+                {
+                  <option value="@b.Value" selected="@(b.Value == Model.ProductBrand.ToString() ? "selected" : null)">@b.Text</option>
+                }
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="productCategory">Category *</label>
+              <select name="ProductCategory" id="productCategory" required>
+                <option value="">Select a category</option>
+                @foreach (var c in Model.Categories)
+                {
+                  <option value="@c.Value" selected="@(c.Value == Model.ProductCategory.ToString() ? "selected" : null)">@c.Text</option>
+                }
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="productGender">Gender *</label>
+              <select name="ProductGender" id="productGender" required>
+                <option value="">Select gender</option>
+                <option value="Men" selected="@(Model.ProductGender == "Men" ? "selected" : null)">Men</option>
+                <option value="Women" selected="@(Model.ProductGender == "Women" ? "selected" : null)">Women</option>
+                <option value="Unisex" selected="@(Model.ProductGender == "Unisex" ? "selected" : null)">Unisex</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="productStatus">Status *</label>
+              <select name="ProductStatus" id="productStatus" required>
+                <option value="">Select status</option>
+                <option value="Draft" selected="@(Model.ProductStatus == "Draft" ? "selected" : null)">Draft</option>
+                <option value="Active" selected="@(Model.ProductStatus == "Active" ? "selected" : null)">Active</option>
+                <option value="Inactive" selected="@(Model.ProductStatus == "Inactive" ? "selected" : null)">Inactive</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pricing Information -->
+        <div class="form-section">
+          <div class="section-title">Pricing Information</div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="regularPrice">Regular Price *</label>
+              <input type="number" id="regularPrice" name="RegularPrice" step="0.01" min="0" placeholder="0.00"
+                     value="@Model.RegularPrice" required />
+            </div>
+
+            <div class="form-group">
+              <label for="salePrice">Sale Price</label>
+              <input type="number" id="salePrice" name="SalePrice" step="0.01" min="0" placeholder="0.00"
+                     value="@Model.SalePrice" />
+            </div>
+
+            <div class="form-group">
+              <label for="discountPercent">Discount (%) (Auto calculate)</label>
+              <input type="number" id="discountPercent" name="DiscountPercent" step="0.01" min="0" placeholder="0.00"
+                     readonly />
+            </div>
+
+            <div class="form-group">
+              <label for="costPrice">Cost Price (optional)</label>
+              <input type="number" id="costPrice" name="CostPrice" step="0.01" min="0" placeholder="0.00"
+                     value="@Model.CostPrice" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Product Images (Overall) -->
+        <div class="form-section">
+          <div class="section-title">Product Images (Overall)</div>
+          <div class="form-row image-row">
+            <div class="form-group">
+              <label for="thumbnailImage">Thumbnail Image *</label>
+              <input type="file" id="thumbnailImage" name="thumbnailImage" accept="image/*" />
+              <div class="form-note">Recommended: 1:1 ratio, minimum 800x800. Leave empty to keep current image.</div>
+              <div class="image-preview" id="thumbnailPreview" aria-live="polite">
+                @if (!string.IsNullOrEmpty(Model.ThumbnailUrl))
+                {
+                  <img class="preview-image" src="@Model.ThumbnailUrl" alt="Current thumbnail" />
+                }
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="galleryImages">Gallery Images (Multiple Upload)</label>
+              <input type="file" id="galleryImages" name="galleryImages" accept="image/*" multiple />
+              <div class="form-note">You can upload multiple images (JPG/PNG/WebP). Leave empty to keep current images.</div>
+              <label class="inline-check">
+                <input type="checkbox" id="useFirstGalleryAsThumb" />
+                Use first gallery image as thumbnail
+              </label>
+              <div class="image-preview-grid" id="galleryPreview" aria-live="polite">
+                @foreach (var url in Model.GalleryUrls)
+                {
+                  <div class="preview-item">
+                    <img class="preview-image" src="@url" alt="Gallery image" />
+                  </div>
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Color Setup -->
+        <div class="form-section">
+          <div class="section-title">Color Setup</div>
+          <div class="section-actions">
+            <button type="button" class="btn btn-secondary btn-sm" id="addColorBtn">+ Add Color</button>
+          </div>
+
+          <div id="colorList" class="color-list">
+            @for (int i = 0; i < Model.Colors.Count; i++)
+            {
+              var color = Model.Colors[i];
+              <div class="color-card expanded" data-color-index="@i">
+                <div class="color-card-header" data-action="toggle-color">
+                  <div class="color-header-left">
+                    <span class="accordion-arrow">&#9662;</span>
+                    <span class="color-card-title">Color #@(i + 1) — @color.Name</span>
+                    <span class="color-badge" data-size-count>@color.Sizes.Count sizes</span>
+                  </div>
+                  <button type="button" class="btn btn-link btn-danger" data-action="remove-color">Remove</button>
+                </div>
+
+                <div class="color-card-body">
+                  <input type="hidden" name="Colors[@i].ColorId" value="@color.ColorId" />
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label>Color Name *</label>
+                      <input type="text" name="Colors[@i].Name" class="color-name-input"
+                             placeholder="e.g., Black" value="@color.Name" required />
+                    </div>
+                    <div class="form-group">
+                      <label>Upload Images per Color</label>
+                      <input type="file" name="Colors[@i].Images" multiple />
+                      <div class="form-note">You can upload multiple images for this color. Leave empty to keep current.</div>
+                      @if (color.ExistingImageUrls.Any())
+                      {
+                        <div class="image-preview-grid" style="margin-top:8px;">
+                          @foreach (var imgUrl in color.ExistingImageUrls)
+                          {
+                            <div class="preview-item">
+                              <img class="preview-image" src="@imgUrl" alt="Color image" />
+                            </div>
+                          }
+                        </div>
+                      }
+                    </div>
+                  </div>
+
+                  <div class="subsection">
+                    <div class="subsection-title">Size &amp; Stock</div>
+                    <div class="size-type-radio">
+                      <label class="radio-pill">
+                        <input type="radio" name="Colors[@i].SizeType" value="EU"
+                               @(color.SizeType == "EU" ? "checked" : "") />
+                        <span>EU</span>
+                      </label>
+                      <label class="radio-pill">
+                        <input type="radio" name="Colors[@i].SizeType" value="US"
+                               @(color.SizeType == "US" ? "checked" : "") />
+                        <span>US</span>
+                      </label>
+                    </div>
+
+                    <div class="size-grid" data-size-grid>
+                      <div class="size-grid-group" data-size-type="EU" style="@(color.SizeType == "US" ? "display:none;" : "")"></div>
+                      <div class="size-grid-group" data-size-type="US" style="@(color.SizeType == "EU" ? "display:none;" : "")"></div>
+                    </div>
+                    <div data-stock-list></div>
+                    <div data-size-inputs></div>
+                  </div>
+                </div>
+
+                @* Pre-load existing sizes as JSON for JS to pick up *@
+                <script type="application/json" class="existing-sizes-data">@Html.Raw(System.Text.Json.JsonSerializer.Serialize(color.Sizes.Select(s => new { s.Type, s.Value, s.Stock, s.Status })))</script>
+              </div>
+            }
+
+            @if (Model.Colors.Count == 0)
+            {
+              <div class="color-card expanded" data-color-index="0">
+                <div class="color-card-header" data-action="toggle-color">
+                  <div class="color-header-left">
+                    <span class="accordion-arrow">&#9662;</span>
+                    <span class="color-card-title">Color #1</span>
+                    <span class="color-badge" data-size-count>0 sizes selected</span>
+                  </div>
+                  <button type="button" class="btn btn-link btn-danger" data-action="remove-color">Remove</button>
+                </div>
+
+                <div class="color-card-body">
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label>Color Name *</label>
+                      <input type="text" name="Colors[0].Name" class="color-name-input" placeholder="e.g., Black" required />
+                    </div>
+                    <div class="form-group">
+                      <label>Upload Images per Color</label>
+                      <input type="file" name="Colors[0].Images" multiple />
+                      <div class="form-note">You can upload multiple images for this color.</div>
+                    </div>
+                  </div>
+
+                  <div class="subsection">
+                    <div class="subsection-title">Size &amp; Stock</div>
+                    <div class="size-type-radio">
+                      <label class="radio-pill">
+                        <input type="radio" name="Colors[0].SizeType" value="EU" checked />
+                        <span>EU</span>
+                      </label>
+                      <label class="radio-pill">
+                        <input type="radio" name="Colors[0].SizeType" value="US" />
+                        <span>US</span>
+                      </label>
+                    </div>
+
+                    <div class="size-grid" data-size-grid>
+                      <div class="size-grid-group" data-size-type="EU"></div>
+                      <div class="size-grid-group" data-size-type="US" style="display:none;"></div>
+                    </div>
+                    <div data-stock-list></div>
+                    <div data-size-inputs></div>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Description -->
+        <div class="form-section">
+          <div class="form-row">
+            <div class="form-group full-width">
+              <label for="shortDescription">Short Description *</label>
+              <textarea id="shortDescription" name="ShortDescription"
+                        placeholder="Enter a brief description of the product" required>@Model.ShortDescription</textarea>
+              <div class="form-note">This description will be displayed on product listings</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Product Description & Details -->
+        <div class="form-section">
+          <div class="section-title">Product Description &amp; Details</div>
+          <div class="form-row">
+            <div class="form-group full-width">
+              <label for="fullDescription">Full Description (Rich Text)</label>
+              <textarea id="fullDescription" name="FullDescription" placeholder="Write the full product story"
+                        rows="6">@Model.FullDescription</textarea>
+              <div class="form-note">You can paste formatted text here (bold, headings, etc.).</div>
+            </div>
+
+            <div class="form-group full-width">
+              <label for="highlightEditor">Highlight Features (Bullet List)</label>
+              <div class="rt-toolbar">
+                <button type="button" class="btn btn-secondary btn-sm rt-btn" data-command="bold">Bold</button>
+                <button type="button" class="btn btn-secondary btn-sm rt-btn"
+                        data-command="insertUnorderedList">Bullet</button>
+              </div>
+              <div id="highlightEditor" class="rt-editor" contenteditable="true"
+                   data-placeholder="พิมพ์จุดเด่นสินค้า เช่น Lightweight, Breathable mesh">@Html.Raw(Model.HighlightFeatures)</div>
+              <input type="hidden" id="highlightFeatures" name="HighlightFeatures" />
+              <div class="form-note">ใช้ปุ่ม Bold หรือ Bullet เพื่อจัดรูปแบบข้อความ</div>
+              <div class="rt-preview" id="highlightPreview"></div>
+            </div>
+          </div>
+
+          <div class="form-row">
+            <div class="form-group full-width">
+              <label for="technicalDetails">Technical Details</label>
+              <textarea id="technicalDetails" name="TechnicalDetails"
+                        placeholder="e.g., 10mm drop; Material: Engineered mesh; Midsole: EVA foam; Outsole: Rubber; Weight: 250g"
+                        rows="3">@Model.TechnicalDetails</textarea>
+              <div class="form-note">Combine specifications, materials, and weight into one short line.</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Control -->
+        <div class="form-section">
+          <div class="section-title">Control</div>
+          <div class="form-row">
+            <div class="form-group">
+              <label>Show on Homepage (optional)</label>
+              <div class="toggle">
+                <input type="hidden" name="ShowOnHomepage" value="false" />
+                <input type="checkbox" class="toggle-input" id="showOnHomepageToggle" name="ShowOnHomepage"
+                       value="true" @(Model.ShowOnHomepage ? "checked" : "") />
+                <label class="toggle-track" for="showOnHomepageToggle"></label>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="form-actions">
+          <a href="/Products/ProductsList" class="btn btn-secondary">Cancel</a>
+          <button type="submit" class="btn btn-secondary" name="Action" value="save">Save</button>
+          <button type="submit" class="btn btn-primary" name="Action" value="publish">Publish</button>
+        </div>
+
+      </form>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  (function () {
+    const regularPrice = document.getElementById('regularPrice');
+    const salePrice = document.getElementById('salePrice');
+    const discountPercent = document.getElementById('discountPercent');
+
+    function toNumber(value) {
+      const num = parseFloat(value);
+      return Number.isFinite(num) ? num : 0;
+    }
+
+    function updateDiscount() {
+      const regular = toNumber(regularPrice.value);
+      const sale = toNumber(salePrice.value);
+
+      if (regular > 0 && sale > 0 && sale <= regular) {
+        const discount = ((regular - sale) / regular) * 100;
+        discountPercent.value = discount.toFixed(2);
+        return;
+      }
+
+      discountPercent.value = '';
+    }
+
+    regularPrice.addEventListener('input', updateDiscount);
+    salePrice.addEventListener('input', updateDiscount);
+
+    // Calculate on page load
+    updateDiscount();
+  })();
+</script>
+
+
+<script>
+  (function () {
+    const editor = document.getElementById('highlightEditor');
+    const hidden = document.getElementById('highlightFeatures');
+    const preview = document.getElementById('highlightPreview');
+    const toolbarButtons = document.querySelectorAll('.rt-btn');
+
+    function renderPreview() {
+      const html = editor.innerHTML.trim();
+      hidden.value = html;
+      preview.innerHTML = html || '<span class="rt-empty">ตัวอย่างการแสดงผลจะอยู่ตรงนี้</span>';
+    }
+
+    toolbarButtons.forEach((btn) => {
+      btn.addEventListener('click', function () {
+        document.execCommand(this.dataset.command || 'bold', false, null);
+        editor.focus();
+        renderPreview();
+      });
+    });
+
+    editor.addEventListener('input', renderPreview);
+    renderPreview();
+  })();
+</script>
+
+<template id="colorTemplate">
+  <div class="color-card expanded" data-color-index="__COLOR_INDEX__">
+    <div class="color-card-header" data-action="toggle-color">
+      <div class="color-header-left">
+        <span class="accordion-arrow">&#9662;</span>
+        <span class="color-card-title">Color #__COLOR_NUMBER__</span>
+        <span class="color-badge" data-size-count>0 sizes selected</span>
+      </div>
+      <button type="button" class="btn btn-link btn-danger" data-action="remove-color">Remove</button>
+    </div>
+
+    <div class="color-card-body">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Color Name *</label>
+          <input type="text" name="Colors[__COLOR_INDEX__].Name" class="color-name-input" placeholder="e.g., Black" required />
+        </div>
+        <div class="form-group">
+          <label>Upload Images per Color</label>
+          <input type="file" name="Colors[__COLOR_INDEX__].Images" multiple />
+          <div class="form-note">You can upload multiple images for this color.</div>
+        </div>
+      </div>
+
+      <div class="subsection">
+        <div class="subsection-title">Size &amp; Stock</div>
+        <div class="size-type-radio">
+          <label class="radio-pill">
+            <input type="radio" name="Colors[__COLOR_INDEX__].SizeType" value="EU" checked />
+            <span>EU</span>
+          </label>
+          <label class="radio-pill">
+            <input type="radio" name="Colors[__COLOR_INDEX__].SizeType" value="US" />
+            <span>US</span>
+          </label>
+        </div>
+
+        <div class="size-grid" data-size-grid>
+          <div class="size-grid-group" data-size-type="EU"></div>
+          <div class="size-grid-group" data-size-type="US" style="display:none;"></div>
+        </div>
+        <div data-stock-list></div>
+        <div data-size-inputs></div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+  (function () {
+    var EU_SIZES = ['36','36.5','37','37.5','38','38.5','39','39.5','40','40.5','41','41.5','42','42.5','43','43.5','44','44.5','45','45.5'];
+    var US_SIZES = ['6','6.5','7','7.5','8','8.5','9','9.5','10','10.5','11','11.5','12','12.5'];
+
+    var colorList = document.getElementById('colorList');
+    var addColorBtn = document.getElementById('addColorBtn');
+    var colorTemplate = document.getElementById('colorTemplate');
+
+    /* ── Build size chips inside a container ── */
+    function buildSizeChips(container, sizes, sizeType) {
+      container.innerHTML = '';
+      sizes.forEach(function (size) {
+        var chip = document.createElement('label');
+        chip.className = 'size-chip';
+        chip.innerHTML =
+          '<input type="checkbox" data-size-value="' + size + '" data-size-type="' + sizeType + '" />' +
+          '<span class="chip-label">' + size + '</span>';
+        container.appendChild(chip);
+      });
+    }
+
+    /* ── Render stock list table for selected sizes ── */
+    function renderStockList(card) {
+      var container = card.querySelector('[data-stock-list]');
+      if (!container) return;
+
+      /* gather old stock values so we preserve user input */
+      var oldStocks = {};
+      container.querySelectorAll('.stock-row').forEach(function (row) {
+        var key = row.getAttribute('data-size-type') + '-' + row.getAttribute('data-size-value');
+        var inp = row.querySelector('.stock-input');
+        if (inp && inp.value) oldStocks[key] = inp.value;
+      });
+
+      var checked = card.querySelectorAll('.size-chip input[type="checkbox"]:checked');
+      if (checked.length === 0) {
+        container.innerHTML = '<div class="stock-empty-hint">Click on sizes above to select them</div>';
+        return;
+      }
+
+      var html = '<div class="stock-list">';
+      html += '<div class="stock-list-header"><span>Size</span><span>Type</span><span>Stock</span></div>';
+      checked.forEach(function (cb) {
+        var sizeType = cb.getAttribute('data-size-type');
+        var sizeValue = cb.getAttribute('data-size-value');
+        var key = sizeType + '-' + sizeValue;
+        var oldVal = oldStocks[key] || '';
+        html += '<div class="stock-row" data-size-type="' + sizeType + '" data-size-value="' + sizeValue + '">' +
+          '<span class="stock-size">' + sizeValue + '</span>' +
+          '<span class="stock-type">' + sizeType + '</span>' +
+          '<input type="number" class="stock-input" min="0" placeholder="0" value="' + oldVal + '" data-stock />' +
+          '</div>';
+      });
+      html += '</div>';
+      container.innerHTML = html;
+    }
+
+    /* ── Fill both EU / US grids for a card, optionally pre-check existing sizes ── */
+    function populateSizeGrid(card, existingSizes) {
+      var euGroup = card.querySelector('[data-size-type="EU"]');
+      var usGroup = card.querySelector('[data-size-type="US"]');
+      if (euGroup) buildSizeChips(euGroup, EU_SIZES, 'EU');
+      if (usGroup) buildSizeChips(usGroup, US_SIZES, 'US');
+
+      /* Pre-check existing sizes and set stock */
+      if (existingSizes && existingSizes.length > 0) {
+        var stockMap = {};
+        existingSizes.forEach(function (s) {
+          var key = s.Type + '-' + s.Value;
+          stockMap[key] = s.Stock;
+          var cb = card.querySelector('.size-chip input[data-size-type="' + s.Type + '"][data-size-value="' + s.Value + '"]');
+          if (cb) {
+            cb.checked = true;
+            cb.closest('.size-chip').classList.add('active');
+          }
+        });
+
+        renderStockList(card);
+
+        /* Fill in existing stock values */
+        card.querySelectorAll('.stock-row').forEach(function (row) {
+          var key = row.getAttribute('data-size-type') + '-' + row.getAttribute('data-size-value');
+          if (stockMap[key] !== undefined) {
+            var inp = row.querySelector('.stock-input');
+            if (inp) inp.value = stockMap[key];
+          }
+        });
+      } else {
+        renderStockList(card);
+      }
+
+      updateHiddenInputs(card);
+    }
+
+    /* ── Sync hidden inputs so the form submits correct data ── */
+    function updateHiddenInputs(card) {
+      var colorIndex = card.getAttribute('data-color-index');
+      var container = card.querySelector('[data-size-inputs]');
+      container.innerHTML = '';
+
+      /* read from stock list rows */
+      var rows = card.querySelectorAll('.stock-row');
+      var idx = 0;
+      rows.forEach(function (row) {
+        var sizeType = row.getAttribute('data-size-type');
+        var sizeValue = row.getAttribute('data-size-value');
+        var stockEl = row.querySelector('.stock-input');
+        var stock = stockEl ? (stockEl.value || '0') : '0';
+        var prefix = 'Colors[' + colorIndex + '].Sizes[' + idx + ']';
+
+        container.insertAdjacentHTML('beforeend',
+          '<input type="hidden" name="' + prefix + '.Type"   value="' + sizeType  + '" />' +
+          '<input type="hidden" name="' + prefix + '.Value"  value="' + sizeValue + '" />' +
+          '<input type="hidden" name="' + prefix + '.Stock"  value="' + stock     + '" />' +
+          '<input type="hidden" name="' + prefix + '.Status" value="Active" />'
+        );
+        idx++;
+      });
+
+      /* badge */
+      var checked = card.querySelectorAll('.size-chip input[type="checkbox"]:checked');
+      var badge = card.querySelector('[data-size-count]');
+      if (badge) {
+        badge.textContent = checked.length > 0 ? checked.length + ' sizes' : '0 sizes selected';
+        badge.classList.toggle('has-sizes', checked.length > 0);
+      }
+    }
+
+    /* ── Show color name in accordion header ── */
+    function updateColorNameInHeader(card) {
+      var nameInput = card.querySelector('.color-name-input');
+      var title = card.querySelector('.color-card-title');
+      var index = parseInt(card.getAttribute('data-color-index'), 10);
+      var name = nameInput ? nameInput.value.trim() : '';
+      title.textContent = name ? 'Color #' + (index + 1) + ' \u2014 ' + name : 'Color #' + (index + 1);
+    }
+
+    /* ── Re-index all cards after add / remove ── */
+    function updateColorTitles() {
+      colorList.querySelectorAll('.color-card').forEach(function (card, index) {
+        card.setAttribute('data-color-index', String(index));
+        updateColorNameInHeader(card);
+
+        /* fix radio names */
+        card.querySelectorAll('.size-type-radio input[type="radio"]').forEach(function (r) {
+          r.name = 'Colors[' + index + '].SizeType';
+        });
+        /* fix file / name inputs */
+        var fileInput = card.querySelector('input[type="file"]');
+        if (fileInput) fileInput.name = 'Colors[' + index + '].Images';
+        var nameInput = card.querySelector('.color-name-input');
+        if (nameInput) nameInput.name = 'Colors[' + index + '].Name';
+
+        updateHiddenInputs(card);
+      });
+    }
+
+    /* ── Add a new color card ── */
+    function addColor() {
+      var colorIndex = colorList.querySelectorAll('.color-card').length;
+      var html = colorTemplate.innerHTML
+        .replaceAll('__COLOR_INDEX__', String(colorIndex))
+        .replaceAll('__COLOR_NUMBER__', String(colorIndex + 1));
+      var wrapper = document.createElement('div');
+      wrapper.innerHTML = html.trim();
+      var card = wrapper.firstElementChild;
+      colorList.appendChild(card);
+      populateSizeGrid(card, null);
+
+      /* collapse others */
+      colorList.querySelectorAll('.color-card').forEach(function (c) {
+        if (c !== card) c.classList.remove('expanded');
+      });
+    }
+
+    /* ── Init existing cards (read pre-loaded JSON for sizes) ── */
+    colorList.querySelectorAll('.color-card').forEach(function (card) {
+      var existingSizes = null;
+      var jsonEl = card.querySelector('.existing-sizes-data');
+      if (jsonEl) {
+        try { existingSizes = JSON.parse(jsonEl.textContent); } catch (e) { }
+      }
+      populateSizeGrid(card, existingSizes);
+    });
+
+    addColorBtn.addEventListener('click', addColor);
+
+    /* ── Delegated click (accordion toggle + remove) ── */
+    colorList.addEventListener('click', function (e) {
+      var target = e.target;
+      if (!(target instanceof HTMLElement)) return;
+
+      /* remove color */
+      if (target.dataset.action === 'remove-color') {
+        var card = target.closest('.color-card');
+        if (card) { card.remove(); updateColorTitles(); }
+        return;
+      }
+
+      /* accordion toggle (click anywhere on header except Remove) */
+      var header = target.closest('[data-action="toggle-color"]');
+      if (header && !target.closest('[data-action="remove-color"]')) {
+        var card2 = header.closest('.color-card');
+        if (card2) card2.classList.toggle('expanded');
+        return;
+      }
+    });
+
+    /* ── Delegated change (checkbox, radio, name) ── */
+    colorList.addEventListener('change', function (e) {
+      var target = e.target;
+      if (!(target instanceof HTMLElement)) return;
+      var card = target.closest('.color-card');
+      if (!card) return;
+
+      /* size-type radio */
+      if (target.type === 'radio' && target.closest('.size-type-radio')) {
+        var type = target.value;
+        card.querySelectorAll('.size-grid-group').forEach(function (g) {
+          g.style.display = g.getAttribute('data-size-type') === type ? '' : 'none';
+        });
+        renderStockList(card);
+        updateHiddenInputs(card);
+        return;
+      }
+
+      /* size checkbox */
+      if (target.type === 'checkbox' && target.closest('.size-chip')) {
+        target.closest('.size-chip').classList.toggle('active', target.checked);
+        renderStockList(card);
+        updateHiddenInputs(card);
+        return;
+      }
+
+      /* color name */
+      if (target.classList.contains('color-name-input')) {
+        updateColorNameInHeader(card);
+        return;
+      }
+    });
+
+    /* ── Delegated input (stock qty & color name) ── */
+    colorList.addEventListener('input', function (e) {
+      var target = e.target;
+      if (!(target instanceof HTMLElement)) return;
+
+      if (target.hasAttribute('data-stock')) {
+        var card = target.closest('.color-card');
+        if (card) updateHiddenInputs(card);
+      }
+      if (target.classList.contains('color-name-input')) {
+        var card2 = target.closest('.color-card');
+        if (card2) updateColorNameInHeader(card2);
+      }
+    });
+  })();
+</script>
+
+
+<script>
+  (function () {
+    const thumbInput = document.getElementById('thumbnailImage');
+    const galleryInput = document.getElementById('galleryImages');
+    const thumbPreview = document.getElementById('thumbnailPreview');
+    const galleryPreview = document.getElementById('galleryPreview');
+    const useFirstGallery = document.getElementById('useFirstGalleryAsThumb');
+    let galleryFiles = [];
+
+    function clearPreview(container) {
+      while (container.firstChild) {
+        container.removeChild(container.firstChild);
+      }
+    }
+
+    function createPreviewImage(file) {
+      const img = document.createElement('img');
+      img.alt = file.name;
+      img.loading = 'lazy';
+      img.className = 'preview-image';
+      const url = URL.createObjectURL(file);
+      img.src = url;
+      img.addEventListener('load', () => URL.revokeObjectURL(url));
+      return img;
+    }
+
+    function renderThumbnailPreview(file) {
+      clearPreview(thumbPreview);
+      if (!file) {
+        return;
+      }
+      thumbPreview.appendChild(createPreviewImage(file));
+    }
+
+    function renderGalleryPreview(files) {
+      clearPreview(galleryPreview);
+      if (!files || files.length === 0) {
+        return;
+      }
+      Array.from(files).forEach((file, index) => {
+        const item = document.createElement('div');
+        item.className = 'preview-item';
+        item.setAttribute('draggable', 'true');
+        item.dataset.index = String(index);
+
+        const badge = document.createElement('div');
+        badge.className = 'preview-badge';
+        badge.textContent = String(index + 1);
+
+        item.appendChild(createPreviewImage(file));
+        item.appendChild(badge);
+        galleryPreview.appendChild(item);
+      });
+    }
+
+    thumbInput.addEventListener('change', function () {
+      renderThumbnailPreview(this.files?.[0]);
+    });
+
+    galleryInput.addEventListener('change', function () {
+      galleryFiles = Array.from(this.files || []);
+      renderGalleryPreview(galleryFiles);
+      if (useFirstGallery.checked) {
+        renderThumbnailPreview(galleryFiles[0]);
+      }
+    });
+
+    useFirstGallery.addEventListener('change', function () {
+      if (this.checked) {
+        renderThumbnailPreview(galleryFiles[0]);
+      } else {
+        renderThumbnailPreview(thumbInput.files?.[0]);
+      }
+    });
+
+    galleryPreview.addEventListener('dragstart', function (event) {
+      const target = event.target;
+      const item = target instanceof HTMLElement ? target.closest('.preview-item') : null;
+      if (!item) {
+        return;
+      }
+      item.classList.add('dragging');
+      event.dataTransfer?.setData('text/plain', item.dataset.index || '');
+    });
+
+    galleryPreview.addEventListener('dragend', function () {
+      const dragging = galleryPreview.querySelector('.preview-item.dragging');
+      if (dragging) {
+        dragging.classList.remove('dragging');
+      }
+    });
+
+    galleryPreview.addEventListener('dragover', function (event) {
+      event.preventDefault();
+      const target = event.target;
+      const item = target instanceof HTMLElement ? target.closest('.preview-item') : null;
+      galleryPreview.querySelectorAll('.preview-item').forEach((el) => el.classList.remove('drag-over'));
+      if (item) {
+        item.classList.add('drag-over');
+      }
+    });
+
+    galleryPreview.addEventListener('drop', function (event) {
+      event.preventDefault();
+      const fromIndex = Number(event.dataTransfer?.getData('text/plain'));
+      const target = event.target;
+      const toItem = target instanceof HTMLElement ? target.closest('.preview-item') : null;
+      const toIndex = toItem ? Number(toItem.dataset.index) : -1;
+
+      galleryPreview.querySelectorAll('.preview-item').forEach((el) => el.classList.remove('drag-over'));
+
+      if (Number.isNaN(fromIndex) || Number.isNaN(toIndex) || fromIndex < 0 || toIndex < 0 || fromIndex === toIndex) {
+        return;
+      }
+
+      const moved = galleryFiles.splice(fromIndex, 1)[0];
+      galleryFiles.splice(toIndex, 0, moved);
+      renderGalleryPreview(galleryFiles);
+      if (useFirstGallery.checked) {
+        renderThumbnailPreview(galleryFiles[0]);
+      }
+    });
+  })();
+</script>

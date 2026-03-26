@@ -1,0 +1,188 @@
+@{
+    Layout = "_CustomerNavbar";
+}
+
+<div class="container">
+    <div>
+        <table class="table table-bordered table-striped table-dark table-hover text-center mt-4">
+            <thead>
+                <th>id</th>
+                <th>Name</th>
+                <th>email</th>
+                <th>password</th>
+                <th>phone_number</th>
+                <th>birth_date</th>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1</td>
+                    <td>John Doe</td>
+                    <td>john.doe@example.com</td>
+                    <td>password123</td>
+                    <td>081-234-5678</td>
+                    <td>1990-01-01</td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td>Jane Smith</td>
+                    <td>jane.smith@example.com</td>
+                    <td>password456</td>
+                    <td>082-345-6789</td>
+                    <td>1992-05-15</td>
+                </tr>
+                <tr>
+                    <td>3</td>
+                    <td>Bob Johnson</td>
+                    <td>bob.johnson@example.com</td>
+                    <td>password789</td>
+                    <td>083-456-7890</td>
+                    <td>1995-12-25</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+    <div class="card">
+        <div class="card-body">
+            <h3>Lab 4 - User Information Table</h3>
+            <div class="card-body">
+                <p>This table displays user information for Lab 4.</p>
+                <button type="button" class="btn btn-outline-dark">Go to Login Page</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="row g-3">
+        <div class="col-12 h-100"></div>
+        <div class="col-12 col-md-4">
+            <div class="card h-100">
+                <h3 class="card-header">หัว</h3>
+                <div class="card-body">
+                    <h3 class="card-title">หัวข้อ</h3>
+                    <p>เนื้อหาของบัตร</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-4">
+            <div class="card h-100">
+                <h3 class="card-header">หัว</h3>
+                <div class="card-body">
+                    <h3 class="card-title">หัวข้อ</h3>
+                    <p>เนื้อหาของบัตร</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-md-4">
+            <div class="card h-100">
+                <h3 class="card-header">หัว</h3>
+                <div class="card-body">
+                    <h3 class="card-title">หัวข้อ</h3>
+                    <p>เนื้อหาของบัตร</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<div class="container">
+    <form asp-controller="Account" asp-action="Lab4">
+        <div class="row align-items-center mb-3">
+            <label for="name" class="form-label">Name</label>
+            <input type="text" class="form-control">
+        </div>
+    </form>
+</div>
+<div class="container">
+    <form asp-controller="Account" asp-action="Lab4">
+        <div class="row align-items-center mb-3">
+            <div class="col-auto">
+                <label for="name" class="form-label">Name</label>
+            </div>
+            <div class="col">
+                <input type="text" class="form-control">
+            </div>
+        </div>
+        <div class="row align-items-center mb-3">
+            <div class="col-auto">
+                <label for="email" class="form-label">Email</label>
+            </div>
+            <div class="col">
+                <input type="email" class="form-control">
+            </div>
+        </div>
+        <div class="row align-items-center mb-3">
+            <div class="col-auto">
+                <label for="phone" class="form-label">Phone</label>
+            </div>
+            <div class="col">
+                <input type="tel" class="form-control">
+            </div>
+        </div>
+        <div class="row align-items-center mb-3">
+            <div class="col-auto">
+                <label for="password" class="form-label">Password</label>
+            </div>
+            <div class="col">
+                <input type="password" class="form-control">
+            </div>
+        </div>
+        <div class="row align-items-center mb-3">
+            <div class="col-auto">
+                <label for="url" class="form-label">Url</label>
+            </div>
+            <div class="col">
+                <input type="url" class="form-control">
+            </div>
+        </div>
+        <div class="row align-items-center mb-3">
+            <div class="col-auto">
+                <label for="search" class="form-label">Search</label>
+            </div>
+            <div class="col">
+                <input type="search" class="form-control">
+            </div>
+        </div>
+        <div class="row align-items-center mb-3">
+            <div class="col-auto">
+                <label for="file" class="form-label">File</label>
+            </div>
+            <div class="col">
+                <input type="file" class="form-control">
+            </div>
+        </div>
+        <div class="row align-items-center mb-3">
+            <div class="col-auto">
+                <label for="name" class="form-label">radio</label>
+            </div>
+            <div class="col">
+                <input type="radio">
+            </div>
+        </div>
+        <div class="row align-items-center mb-3">
+            <div class="col-auto">
+                <label for="checkbox" class="form-label">checkbox</label>
+            </div>
+            <div class="col">
+                <input type="checkbox">
+            </div>
+        </div>
+        <div class="row align-items-center mb-3">
+            <div class="col-auto">
+                <label for="date" class="form-label">Date</label>
+            </div>
+            <div class="col">
+                <input type="date" class="form-control">
+            </div>
+        </div>
+        <div class="row align-items-center mb-3">
+            <div class="col-auto">
+                <label for="color" class="form-label">Color</label>
+            </div>
+            <div class="col">
+                <input type="color">
+            </div>
+        </div>
+    </form>
+</div>

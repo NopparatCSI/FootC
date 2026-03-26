@@ -1,0 +1,141 @@
+.shop-main > .customer-index-page {
+  padding: 0;
+}
+
+.customer-index-page {
+  margin: 0;
+  color: #1a1a1a;
+  overflow-x: hidden;
+}
+
+.placeholder-banner {
+  background: #d9d9d9;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.5rem;
+}
+
+.placeholder-banner h1,
+.placeholder-banner h2 {
+  margin: 0;
+  font-size: clamp(2rem, 3.5vw, 3rem);
+  letter-spacing: 0.02em;
+  font-weight: 500;
+}
+
+.banner-lg {
+  min-height: 420px;
+}
+
+.banner-md {
+  min-height: 360px;
+}
+
+.banner-nav {
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.7);
+  color: #444;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+}
+
+.product-zone {
+  background: #173D2A;
+  padding: 2rem 3rem 2.5rem;
+}
+
+.product-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.product-head h2 {
+  color: #f1f1f1;
+  margin: 0;
+  font-size: clamp(1.5rem, 2.2vw, 2rem);
+  letter-spacing: 0.03em;
+}
+
+.head-actions {
+  display: inline-flex;
+  gap: 0.5rem;
+}
+
+.head-actions button {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(255, 255, 255, 0.85);
+  color: #1f1f1f;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.product-placeholder {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background: #d9d9d9;
+}
+
+.category-section {
+  background: #173D2A;
+  padding-bottom: 0;
+}
+
+.category-tile {
+  min-height: 360px;
+  background: #050505;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.8rem;
+  padding: 2rem 1rem;
+}
+
+.category-tile h3 {
+  color: #f3f3f3;
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 600;
+}
+
+.category-tile button {
+  border: none;
+  border-radius: 999px;
+  background: #efefef;
+  color: #111;
+  padding: 0.15rem 1.5rem;
+  font-size: 1.8rem;
+  font-weight: 700;
+  line-height: 1.25;
+}
+
+@media (max-width: 991px) {
+  .banner-lg {
+    min-height: 300px;
+  }
+
+  .banner-md {
+    min-height: 260px;
+  }
+
+  .product-zone {
+    padding: 1.25rem;
+  }
+
+  .category-tile {
+    min-height: 280px;
+  }
+}

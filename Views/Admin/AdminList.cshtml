@@ -1,0 +1,263 @@
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Admin List";
+}
+
+<link rel="stylesheet" href="~/css/AdminListStyle.css" asp-append-version="true" />
+
+<div class="admins-page">
+
+    <!-- Page Header -->
+    <div class="page-header">
+        <div>
+            <h2 class="page-title">Admin Users</h2>
+            <p class="page-subtitle">Manage administrators and assign roles</p>
+        </div>
+        <div class="header-actions">
+            <span class="stat-badge">
+                <i class="bi bi-person-gear"></i>
+                <span id="totalCount">3</span> Total
+            </span>
+            <button class="btn-add" data-bs-toggle="modal" data-bs-target="#addAdminModal">
+                <i class="bi bi-plus-lg"></i> Add Admin
+            </button>
+        </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+        <div class="search-box">
+            <i class="bi bi-search"></i>
+            <input type="text" id="filterSearch" placeholder="Search by name, email or phone..." />
+        </div>
+        <select id="filterRole">
+            <option value="">All Roles</option>
+            <option value="admin">Admin</option>
+            <option value="user">User</option>
+        </select>
+    </div>
+
+    <!-- Table Card -->
+    <div class="table-card">
+        <div class="table-header">
+            <span>All Administrators</span>
+        </div>
+
+        <div class="table-wrapper">
+            <table class="admin-table" id="adminTable">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Name</th>
+                        <th>Email</th>
+                        <th>Phone</th>
+                        <th>Birth Date</th>
+                        <th>Role</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr data-name="John Doe" data-email="john.doe@example.com" data-phone="081-234-5678" data-role="admin">
+                        <td>1</td>
+                        <td>
+                            <div class="user-cell">
+                                <div class="user-avatar">J</div>
+                                <div>
+                                    <div class="user-name">John Doe</div>
+                                    <div class="user-id">ID: ADM001</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>john.doe&#64;example.com</td>
+                        <td>081-234-5678</td>
+                        <td>1990-01-01</td>
+                        <td><span class="role-badge role-admin">Admin</span></td>
+                        <td>
+                            <div class="table-actions">
+                                <button class="btn-action" title="Edit"><i class="bi bi-pencil"></i></button>
+                                <button class="btn-action btn-danger" title="Delete"><i class="bi bi-trash"></i></button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr data-name="Jane Smith" data-email="jane.smith@example.com" data-phone="082-345-6789" data-role="admin">
+                        <td>2</td>
+                        <td>
+                            <div class="user-cell">
+                                <div class="user-avatar">J</div>
+                                <div>
+                                    <div class="user-name">Jane Smith</div>
+                                    <div class="user-id">ID: ADM002</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>jane.smith&#64;example.com</td>
+                        <td>082-345-6789</td>
+                        <td>1992-05-15</td>
+                        <td><span class="role-badge role-admin">Admin</span></td>
+                        <td>
+                            <div class="table-actions">
+                                <button class="btn-action" title="Edit"><i class="bi bi-pencil"></i></button>
+                                <button class="btn-action btn-danger" title="Delete"><i class="bi bi-trash"></i></button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr data-name="Bob Johnson" data-email="bob.johnson@example.com" data-phone="083-456-7890" data-role="user">
+                        <td>3</td>
+                        <td>
+                            <div class="user-cell">
+                                <div class="user-avatar">B</div>
+                                <div>
+                                    <div class="user-name">Bob Johnson</div>
+                                    <div class="user-id">ID: ADM003</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td>bob.johnson&#64;example.com</td>
+                        <td>083-456-7890</td>
+                        <td>1995-12-25</td>
+                        <td><span class="role-badge role-user">User</span></td>
+                        <td>
+                            <div class="table-actions">
+                                <button class="btn-action" title="Edit"><i class="bi bi-pencil"></i></button>
+                                <button class="btn-action btn-danger" title="Delete"><i class="bi bi-trash"></i></button>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="empty-state" id="adminsEmpty" style="display:none;">
+            <i class="bi bi-person-x" style="font-size:28px;color:#999;"></i>
+            <p>No administrators match your search.</p>
+        </div>
+    </div>
+</div>
+
+<!-- ===== Add Admin Modal ===== -->
+<div class="modal fade" id="addAdminModal" tabindex="-1" aria-labelledby="addAdminLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content admin-modal">
+            <div class="modal-header">
+                <h5 class="modal-title" id="addAdminLabel">
+                    <i class="bi bi-person-plus me-2"></i>Add New Admin
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form>
+                <div class="modal-body">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="inputFirstName">First Name</label>
+                            <input type="text" id="inputFirstName" name="firstName" class="form-input"
+                                placeholder="Enter first name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="inputLastName">Last Name</label>
+                            <input type="text" id="inputLastName" name="lastName" class="form-input"
+                                placeholder="Enter last name" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="inputEmail">Email</label>
+                        <div class="input-icon">
+                            <i class="bi bi-envelope"></i>
+                            <input type="email" id="inputEmail" name="email" class="form-input has-icon"
+                                placeholder="admin@example.com" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="inputPassword">Password</label>
+                            <div class="input-icon">
+                                <i class="bi bi-lock"></i>
+                                <input type="password" id="inputPassword" name="password" class="form-input has-icon"
+                                    placeholder="••••••••" required>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="inputConfirmPassword">Confirm Password</label>
+                            <div class="input-icon">
+                                <i class="bi bi-lock-fill"></i>
+                                <input type="password" id="inputConfirmPassword" name="confirmPassword"
+                                    class="form-input has-icon" placeholder="••••••••" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="birthdate">Birth Date</label>
+                            <input type="date" id="birthdate" name="birthdate" class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <label for="phonenumber">Phone Number</label>
+                            <div class="input-icon">
+                                <i class="bi bi-telephone"></i>
+                                <input type="tel" id="phonenumber" name="phoneNumber" class="form-input has-icon"
+                                    placeholder="08x-xxx-xxxx">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="inputRoles">Role</label>
+                        <select id="inputRoles" name="roles" class="form-input" required>
+                            <option value="">Select Role</option>
+                            <option value="admin">Admin</option>
+                            <option value="user">User</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-cancel" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn-submit">
+                        <i class="bi bi-plus-lg me-1"></i> Create Admin
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Client-side filter script -->
+<script>
+    (function () {
+        const searchInput = document.getElementById('filterSearch');
+        const roleSelect = document.getElementById('filterRole');
+        const table = document.getElementById('adminTable');
+        const emptyState = document.getElementById('adminsEmpty');
+        const rows = table ? Array.from(table.querySelectorAll('tbody tr')) : [];
+
+        function applyFilters() {
+            const query = (searchInput.value || '').toLowerCase();
+            const role = (roleSelect.value || '').toLowerCase();
+            let visible = 0;
+
+            rows.forEach(function (row) {
+                const name = (row.dataset.name || '').toLowerCase();
+                const email = (row.dataset.email || '').toLowerCase();
+                const phone = (row.dataset.phone || '').toLowerCase();
+                const rowRole = (row.dataset.role || '').toLowerCase();
+
+                const matchSearch = !query || name.includes(query) || email.includes(query) || phone.includes(query);
+                const matchRole = !role || rowRole === role;
+
+                if (matchSearch && matchRole) {
+                    row.style.display = '';
+                    visible++;
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+
+            if (emptyState) {
+                emptyState.style.display = visible === 0 ? 'block' : 'none';
+            }
+
+            const counter = document.getElementById('totalCount');
+            if (counter) counter.textContent = visible;
+        }
+
+        if (searchInput) searchInput.addEventListener('input', applyFilters);
+        if (roleSelect) roleSelect.addEventListener('change', applyFilters);
+    })();
+</script>

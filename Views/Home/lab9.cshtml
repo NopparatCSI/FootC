@@ -1,0 +1,12 @@
+@* @using WebApp1.ViewModels *@
+@model WebApp1.ViewModels.Lab9User
+
+<div>
+    <form asp-for="lab9User" asp-controller="Home" method="post">
+        usrid: <input type="text" class="form-control" asp-for="UserId">
+        name: <input type="text" class="form-control" asp-for="Name">
+        lastname: <input type="text" class="form-control" asp-for="Lastname">
+        password: <input type="password" class="form-control" asp-for="Password">
+        <button type="submit" class="btn btn-primary mt-2">Submit</button>
+    </form>
+</div>

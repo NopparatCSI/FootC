@@ -1,0 +1,434 @@
+@model WebApp1.ViewModels.InventoryViewModel
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Inventory";
+}
+
+<link rel="stylesheet" href="~/css/InventoryStyle.css" asp-append-version="true" />
+
+<div class="inventory-page">
+
+    <!-- ===== Page Header ===== -->
+    <div class="page-header">
+        <div>
+            <h2 class="page-title">Inventory</h2>
+            <p class="page-subtitle">Monitor stock levels across all products</p>
+        </div>
+    </div>
+
+    <!-- ===== Summary Cards ===== -->
+    <div class="summary-cards">
+        <div class="summary-card">
+            <div class="summary-icon icon-total"><i class="bi bi-box-seam"></i></div>
+            <div class="summary-info">
+                <span class="summary-value">@Model.TotalProducts</span>
+                <span class="summary-label">Total Products</span>
+            </div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-icon icon-stock"><i class="bi bi-stack"></i></div>
+            <div class="summary-info">
+                <span class="summary-value">@Model.TotalStock.ToString("N0")</span>
+                <span class="summary-label">Total Stock</span>
+            </div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-icon icon-low"><i class="bi bi-exclamation-triangle"></i></div>
+            <div class="summary-info">
+                <span class="summary-value">@Model.LowStockSizes</span>
+                <span class="summary-label">Low Stock Sizes (≤10)</span>
+            </div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-icon icon-out"><i class="bi bi-x-circle"></i></div>
+            <div class="summary-info">
+                <span class="summary-value">@Model.OutOfStockSizes</span>
+                <span class="summary-label">Out of Stock Sizes</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== Filter Bar ===== -->
+    <div class="filter-bar">
+        <div class="search-box">
+            <i class="bi bi-search search-icon"></i>
+            <input type="text" id="filterSearch" placeholder="Search products…" />
+        </div>
+        <select id="filterStock">
+            <option value="">All Stock Levels</option>
+            <option value="in-stock">In Stock</option>
+            <option value="low-stock">Low Stock (≤10)</option>
+            <option value="out-of-stock">Out of Stock</option>
+        </select>
+    </div>
+
+    <!-- ===== Table Card ===== -->
+    <div class="table-card">
+        <div class="table-header">
+            <span>All Products</span>
+            <span class="record-count" id="recordCount">@Model.TotalProducts product@(Model.TotalProducts == 1 ? "" : "s")</span>
+        </div>
+        <div class="table-wrapper">
+            <table class="inventory-table" id="inventoryTable">
+                <thead>
+                    <tr>
+                        <th>Product</th>
+                        <th>SKU</th>
+                        <th>Brand</th>
+                        <th>Category</th>
+                        <th>Status</th>
+                        <th class="text-center">Total Stock</th>
+                        <th class="text-center">Actions</th>
+                        <th class="text-center">Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var product in Model.Products)
+                    {
+                        var stockClass = product.TotalStock == 0 ? "out-of-stock"
+                                       : product.TotalStock <= 10 ? "low-stock"
+                                       : "in-stock";
+                        var statusClass = product.Status == "Active" ? "active" : "inactive";
+
+                        <tr class="row-product" data-id="@product.ProductId"
+                            data-name="@product.ProductName" data-stock-level="@stockClass">
+                            <td>
+                                <div class="product-name">@product.ProductName</div>
+                            </td>
+                            <td><span class="sku-badge">@product.Sku</span></td>
+                            <td>@product.BrandName</td>
+                            <td>@product.CategoryName</td>
+                            <td><span class="status-pill @statusClass">@product.Status</span></td>
+                            <td class="text-center">
+                                <span class="stock-badge @stockClass">@product.TotalStock</span>
+                            </td>
+                            <td class="text-center">
+                                <button class="btn-action btn-edit-stock" data-product-id="@product.ProductId" data-product-name="@product.ProductName" title="Edit Stock">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                            </td>
+                            <td class="text-center">
+                                <button class="btn-toggle-detail" data-product="@product.ProductId" title="View stock details">
+                                    <i class="bi bi-chevron-down"></i>
+                                </button>
+                            </td>
+                        </tr>
+
+                        <!-- Detail rows for each color + sizes -->
+                        @foreach (var color in product.Colors)
+                        {
+                            <tr class="row-detail" data-product="@product.ProductId" style="display:none;">
+                                <td colspan="8">
+                                    <div class="detail-block">
+                                        <div class="detail-color-header">
+                                            <i class="bi bi-palette"></i> @color.ColorName
+                                        </div>
+                                        <div class="detail-sizes">
+                                            @if (color.Sizes.Any())
+                                            {
+                                                <table class="sizes-table">
+                                                    <thead>
+                                                        <tr>
+                                                            <th>Size Type</th>
+                                                            <th>Size</th>
+                                                            <th class="text-center">Quantity</th>
+                                                            <th>Status</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        @foreach (var size in color.Sizes)
+                                                        {
+                                                            var sizeStockClass = size.StockQuantity == 0 ? "out-of-stock"
+                                                                               : size.StockQuantity <= 10 ? "low-stock"
+                                                                               : "in-stock";
+                                                            var sizeStatusClass = size.Status == "Active" ? "active" : "inactive";
+                                                            <tr>
+                                                                <td>@size.SizeType</td>
+                                                                <td><strong>@size.SizeValue</strong></td>
+                                                                <td class="text-center">
+                                                                    <span class="stock-badge @sizeStockClass">@size.StockQuantity</span>
+                                                                </td>
+                                                                <td><span class="status-pill sm @sizeStatusClass">@size.Status</span></td>
+                                                            </tr>
+                                                        }
+                                                    </tbody>
+                                                </table>
+                                            }
+                                            else
+                                            {
+                                                <p class="no-sizes">No sizes configured for this color.</p>
+                                            }
+                                        </div>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="empty-state" id="inventoryEmpty" style="display:@(Model.TotalProducts == 0 ? "" : "none");">
+            No products match your filters.
+        </div>
+    </div>
+</div>
+
+<!-- ===== Edit Stock Modal ===== -->
+<div class="modal fade" id="editStockModal" tabindex="-1" aria-labelledby="editStockLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content stock-modal">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editStockLabel">Edit Stock</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="stock-modal-product">Product: <strong id="stockProductName"></strong></p>
+                <div id="stockEditBody"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn-cancel" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn-save" id="saveStockBtn">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ===== Scripts ===== -->
+<script>
+    (function () {
+        var tbody = document.querySelector('#inventoryTable tbody');
+        var productRows = Array.from(document.querySelectorAll('.row-product'));
+        var emptyState = document.getElementById('inventoryEmpty');
+        var countLabel = document.getElementById('recordCount');
+
+        /* ---------- Toggle detail rows ---------- */
+        document.querySelectorAll('.btn-toggle-detail').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var productId = btn.dataset.product;
+                var icon = btn.querySelector('i');
+                var details = document.querySelectorAll('tr.row-detail[data-product="' + productId + '"]');
+                var isOpen = !btn.classList.contains('collapsed');
+
+                if (isOpen) {
+                    btn.classList.add('collapsed');
+                    icon.classList.replace('bi-chevron-down', 'bi-chevron-right');
+                    details.forEach(function (r) { r.style.display = 'none'; });
+                } else {
+                    btn.classList.remove('collapsed');
+                    icon.classList.replace('bi-chevron-right', 'bi-chevron-down');
+                    details.forEach(function (r) { r.style.display = ''; });
+                }
+            });
+        });
+
+        /* ---------- Filter ---------- */
+        var searchInput = document.getElementById('filterSearch');
+        var stockSelect = document.getElementById('filterStock');
+
+        function applyFilters() {
+            var search = searchInput.value.trim().toLowerCase();
+            var stock = stockSelect.value;
+            var visible = 0;
+
+            productRows.forEach(function (row) {
+                var name = (row.dataset.name || '').toLowerCase();
+                var stockLevel = row.dataset.stockLevel || '';
+
+                var matchSearch = !search || name.includes(search);
+                var matchStock = !stock || stockLevel === stock;
+
+                var show = matchSearch && matchStock;
+                row.style.display = show ? '' : 'none';
+
+                // Also hide/show associated detail rows
+                var productId = row.dataset.id;
+                var details = document.querySelectorAll('tr.row-detail[data-product="' + productId + '"]');
+                details.forEach(function (r) { r.style.display = 'none'; });
+
+                // Collapse toggle
+                var toggleBtn = row.querySelector('.btn-toggle-detail');
+                if (toggleBtn) {
+                    toggleBtn.classList.add('collapsed');
+                    var icon = toggleBtn.querySelector('i');
+                    if (icon) icon.classList.replace('bi-chevron-down', 'bi-chevron-right');
+                }
+
+                if (show) visible++;
+            });
+
+            countLabel.textContent = visible + ' product' + (visible === 1 ? '' : 's');
+            emptyState.style.display = visible === 0 ? '' : 'none';
+        }
+
+        searchInput.addEventListener('input', applyFilters);
+        stockSelect.addEventListener('change', applyFilters);
+
+        /* ---------- Edit Stock Modal ---------- */
+        var editStockModal = document.getElementById('editStockModal');
+        var stockProductName = document.getElementById('stockProductName');
+        var stockEditBody = document.getElementById('stockEditBody');
+        var saveStockBtn = document.getElementById('saveStockBtn');
+        var currentProductId = null;
+
+        // Build stock data from detail rows
+        function getProductStockData(productId) {
+            var detailRows = document.querySelectorAll('tr.row-detail[data-product="' + productId + '"]');
+            var colors = [];
+            detailRows.forEach(function (row) {
+                var colorName = row.querySelector('.detail-color-header');
+                var name = colorName ? colorName.textContent.trim() : 'Unknown';
+                var sizeRows = row.querySelectorAll('.sizes-table tbody tr');
+                var sizes = [];
+                sizeRows.forEach(function (sr) {
+                    var cells = sr.querySelectorAll('td');
+                    if (cells.length >= 3) {
+                        var badge = cells[2].querySelector('.stock-badge');
+                        sizes.push({
+                            sizeType: cells[0].textContent.trim(),
+                            sizeValue: cells[1].textContent.trim(),
+                            quantity: badge ? parseInt(badge.textContent.trim()) : 0,
+                            sizeId: null // will be set from data
+                        });
+                    }
+                });
+                colors.push({ colorName: name, sizes: sizes });
+            });
+            return colors;
+        }
+
+        // Attach edit button events
+        document.querySelectorAll('.btn-edit-stock').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                currentProductId = btn.dataset.productId;
+                stockProductName.textContent = btn.dataset.productName;
+                buildStockForm(currentProductId);
+                var bsModal = new bootstrap.Modal(editStockModal);
+                bsModal.show();
+            });
+        });
+
+        function buildStockForm(productId) {
+            stockEditBody.innerHTML = '';
+            var detailRows = document.querySelectorAll('tr.row-detail[data-product="' + productId + '"]');
+
+            if (detailRows.length === 0) {
+                stockEditBody.innerHTML = '<p class="no-sizes">No colors/sizes found for this product.</p>';
+                return;
+            }
+
+            detailRows.forEach(function (row) {
+                var colorHeader = row.querySelector('.detail-color-header');
+                var colorName = colorHeader ? colorHeader.textContent.trim() : 'Unknown';
+
+                var section = document.createElement('div');
+                section.className = 'stock-color-section';
+
+                var header = document.createElement('div');
+                header.className = 'stock-color-title';
+                header.innerHTML = '<i class="bi bi-palette"></i> ' + escHtml(colorName);
+                section.appendChild(header);
+
+                var sizeRows = row.querySelectorAll('.sizes-table tbody tr');
+                if (sizeRows.length === 0) {
+                    var noSizes = document.createElement('p');
+                    noSizes.className = 'no-sizes';
+                    noSizes.textContent = 'No sizes configured.';
+                    section.appendChild(noSizes);
+                } else {
+                    var table = document.createElement('table');
+                    table.className = 'sizes-table stock-edit-table';
+                    table.innerHTML = '<thead><tr><th>Size Type</th><th>Size</th><th>Current Qty</th><th>New Qty</th></tr></thead>';
+                    var tBody = document.createElement('tbody');
+
+                    sizeRows.forEach(function (sr, idx) {
+                        var cells = sr.querySelectorAll('td');
+                        if (cells.length < 3) return;
+                        var badge = cells[2].querySelector('.stock-badge');
+                        var currentQty = badge ? parseInt(badge.textContent.trim()) : 0;
+                        var sizeType = cells[0].textContent.trim();
+                        var sizeValue = cells[1].textContent.trim();
+
+                        var tr = document.createElement('tr');
+                        tr.innerHTML =
+                            '<td>' + escHtml(sizeType) + '</td>' +
+                            '<td><strong>' + escHtml(sizeValue) + '</strong></td>' +
+                            '<td><span class="stock-badge ' + getStockClass(currentQty) + '">' + currentQty + '</span></td>' +
+                            '<td><input type="number" class="stock-input" min="0" value="' + currentQty + '" ' +
+                            'data-original="' + currentQty + '" data-detail-row-index="' + idx + '" /></td>';
+                        tBody.appendChild(tr);
+                    });
+                    table.appendChild(tBody);
+                    section.appendChild(table);
+                }
+                stockEditBody.appendChild(section);
+            });
+        }
+
+        function getStockClass(qty) {
+            if (qty === 0) return 'out-of-stock';
+            if (qty <= 10) return 'low-stock';
+            return 'in-stock';
+        }
+
+        // Save stock changes
+        saveStockBtn.addEventListener('click', function () {
+            var inputs = stockEditBody.querySelectorAll('.stock-input');
+            var changes = [];
+
+            // Get sizeIds from the model data
+            var productData = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Products.Select(p => new { p.ProductId, Colors = p.Colors.Select(c => new { c.ColorId, c.ColorName, Sizes = c.Sizes.Select(s => new { s.SizeId, s.SizeType, s.SizeValue, s.StockQuantity }) }) }), new System.Text.Json.JsonSerializerOptions { PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase }));
+
+            var product = productData.find(function (p) { return String(p.productId) === String(currentProductId); });
+            if (!product) { alert('Product not found.'); return; }
+
+            var allSizes = [];
+            product.colors.forEach(function (c) {
+                c.sizes.forEach(function (s) { allSizes.push(s); });
+            });
+
+            inputs.forEach(function (input, idx) {
+                var newQty = parseInt(input.value);
+                var original = parseInt(input.dataset.original);
+                if (newQty !== original && idx < allSizes.length) {
+                    changes.push({ sizeId: allSizes[idx].sizeId, stockQuantity: newQty });
+                }
+            });
+
+            if (changes.length === 0) {
+                bootstrap.Modal.getInstance(editStockModal).hide();
+                return;
+            }
+
+            saveStockBtn.disabled = true;
+            saveStockBtn.textContent = 'Saving…';
+
+            var promises = changes.map(function (c) {
+                return fetch('/Products/UpdateStock', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(c)
+                }).then(function (res) { return res.json(); });
+            });
+
+            Promise.all(promises)
+                .then(function (results) {
+                    var failed = results.filter(function (r) { return !r.success; });
+                    if (failed.length > 0) {
+                        alert(failed.length + ' update(s) failed.');
+                    }
+                    window.location.reload();
+                })
+                .catch(function () { alert('An error occurred while saving.'); })
+                .finally(function () {
+                    saveStockBtn.disabled = false;
+                    saveStockBtn.textContent = 'Save Changes';
+                });
+        });
+
+        function escHtml(str) {
+            var div = document.createElement('div');
+            div.appendChild(document.createTextNode(str));
+            return div.innerHTML;
+        }
+    })();
+</script>

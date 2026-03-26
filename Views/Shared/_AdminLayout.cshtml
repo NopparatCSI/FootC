@@ -1,0 +1,206 @@
+@{
+    var controller = ViewContext.RouteData.Values["controller"]?.ToString();
+    var action = ViewContext.RouteData.Values["action"]?.ToString();
+}
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Admin Foot C Shop</title>
+
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css">
+
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="~/css/adminStyle.css" asp-append-version="true" />
+
+    <!-- Google Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@100..900&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="layout">
+
+        <!-- ===== Sidebar ===== -->
+        <aside class="sidebar">
+            <h4 class="sidebar-title">Foot C Admin</h4>
+
+            <ul class="nav flex-column">
+
+                <!-- Dashboard -->
+                <li class="nav-item">
+                    <a class="nav-link @(controller == "Dashboard" ? "active" : "")" asp-controller="Dashboard"
+                           asp-action="Index">
+                        <i class="bi bi-speedometer2 me-2"></i>
+                        <span class="nav-text">Dashboard</span>
+                    </a>
+                </li>
+
+                <!-- Products -->
+                <li class="nav-item">
+                    <a class="nav-link d-flex justify-content-between align-items-center
+                        @(controller == "Product" || controller == "Products" || controller == "Category" ? "active" : "")"
+                           data-bs-toggle="collapse"               href="#productsMenu"
+                           aria-expanded="@(controller == "Product" || controller == "Products" || controller == "Category" ? "true" : "false")">
+                        <span class="nav-label">
+                            <i class="bi bi-box-seam me-2"></i>
+                            <span class="nav-text">Products</span>
+                        </span>
+                        <i class="bi bi-chevron-down dropdown-icon"></i>
+                    </a>
+
+                    <ul class="collapse nav flex-column ms-4
+                        @(controller == "Product" || controller == "Products" || controller == "Category" ? "show" : "")"
+                        id="productsMenu">
+
+                        <li class="nav-item">
+                            <a class="nav-link @(action == "ProductsList" ? "active" : "")" asp-controller="Products"
+                                   asp-action="ProductsList">
+                                <span class="nav-text">All Products</span>
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link @(action == "ProductsCategories" ? "active" : "")" asp-controller="Products"
+                                   asp-action="ProductsCategories">
+                                <span class="nav-text">Categories</span>
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link @(action == "ProductsBrand" ? "active" : "")" asp-controller="Products"
+                                   asp-action="ProductsBrand">
+                                <span class="nav-text">Brands</span>
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link @(action == "ProductsAdd" ? "active" : "")" asp-controller="Products"
+                                   asp-action="ProductsAdd">
+                                <span class="nav-text">Add Product</span>
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link @(action == "ProductsInventory" ? "active" : "")" asp-controller="Products"
+                                   asp-action="ProductsInventory">
+                                <span class="nav-text">Inventory</span>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
+                <!-- Orders -->
+                <li class="nav-item">
+                    <a class="nav-link d-flex justify-content-between align-items-center
+                        @(controller == "Order" ? "active" : "")" data-bs-toggle="collapse" href="#ordersMenu"
+                           aria-expanded="@(controller == "Order" ? "true" : "false")">
+                        <span class="nav-label">
+                            <i class="bi bi-receipt me-2"></i>
+                            <span class="nav-text">Orders</span>
+                        </span>
+                        <i class="bi bi-chevron-down dropdown-icon"></i>
+                    </a>
+
+                    <ul class="collapse nav flex-column ms-4
+                        @(controller == "Order" ? "show" : "")" id="ordersMenu">
+
+                        <li class="nav-item">
+                            <a class="nav-link @(controller == "Order" ? "active" : "")" asp-controller="Order"
+                                   asp-action="Index">
+                                <span class="nav-text">Order List</span>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
+                <!-- Users -->
+                <li class="nav-item">
+                    <a class="nav-link d-flex justify-content-between align-items-center
+                        @(controller == "User" ? "active" : "")" data-bs-toggle="collapse" href="#usersMenu"
+                           aria-expanded="@(controller == "User" ? "true" : "false")">
+                        <span class="nav-label">
+                            <i class="bi bi-people me-2"></i>
+                            <span class="nav-text">Users</span>
+                        </span>
+                        <i class="bi bi-chevron-down dropdown-icon"></i>
+                    </a>
+
+                    <ul class="collapse nav flex-column ms-4
+                        @(controller == "User" ? "show" : "")" id="usersMenu">
+
+                        <li class="nav-item">
+                            <a class="nav-link @(controller == "User" ? "active" : "")" asp-controller="User"
+                                   asp-action="Index">
+                                <span class="nav-text">User List</span>
+                            </a>
+                        </li>
+                    </ul>
+                </li>
+
+                <!-- Admin List -->
+                <li class="nav-item">
+                    <a class="nav-link @(controller == "Admin" && action == "AdminList" ? "active" : "")"
+                           asp-controller="Admin" asp-action="AdminList">
+                        <i class="bi bi-person-gear me-2"></i>
+                        <span class="nav-text">Admin List</span>
+                    </a>
+                </li>
+
+                <!-- Logout -->
+                <li class="nav-item mt-3">
+                    <a class="nav-link" asp-controller="Auth" asp-action="Logout">
+                        <i class="bi bi-box-arrow-right me-2"></i>
+                        <span class="nav-text">Logout</span>
+                    </a>
+                </li>
+
+            </ul>
+        </aside>
+
+        <!-- ===== Main ===== -->
+        <div class="main">
+
+            <header class="topbar">
+                <button type="button" class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle sidebar">
+                    <i class="bi bi-list"></i>
+                </button>
+                <h2>Admin Panel</h2>
+            </header>
+
+            <main class="content">
+                @RenderBody()
+            </main>
+
+            <footer class="footer">
+                © 2026 - Foot C Shop
+            </footer>
+
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+            (function () {
+                const layout = document.querySelector('.layout');
+                const toggle = document.getElementById('sidebarToggle');
+                if (!layout || !toggle) {
+                    return;
+                }
+                toggle.addEventListener('click', function () {
+                    layout.classList.toggle('sidebar-collapsed');
+                });
+            })();
+    </script>
+</body>
+
+</html>

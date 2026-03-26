@@ -1,0 +1,26 @@
+@using WebApp1.Models.Db
+@model IEnumerable<WebApp1.Models.Db.Labstudent>
+
+<div>
+    <table>
+        <thead>
+            <tr>
+                <th>StdID</th>
+                <th>StdName</th>
+                <th>StdLastName</th>
+                <th>StdPassword</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var labstudent in Model)
+            {
+                <tr>
+                    <td>@labstudent.StdId</td>
+                    <td>@labstudent.StdName</td>
+                    <td>@labstudent.StdLastName</td>
+                    <td>@labstudent.StdPassword</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

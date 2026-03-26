@@ -1,0 +1,99 @@
+@{
+    Layout = "_AdminLayout";
+}
+
+<link rel="stylesheet" href="~/css/ProductViewStyle.css" asp-append-version="true" />
+
+<div class="product-view">
+    <div class="view-header">
+        <div>
+            <h2 class="view-title">Product Details</h2>
+            <p class="view-subtitle">Preview of the product as displayed on the storefront</p>
+        </div>
+        <a class="back-link" href="/Products/ProductsList">Back to list</a>
+    </div>
+
+    <div class="card product-hero">
+        <img class="hero-image" src="/images/placeholder.png" alt="Example Runner" />
+        <div class="hero-details">
+            <h3>Example Runner</h3>
+            <div class="hero-meta">
+                <span>SKU: SHOE-001</span>
+                <span>Category: Running Shoes</span>
+                <span>Gender: Unisex</span>
+            </div>
+            <div class="price-row">
+                <span class="price-current">2,990</span>
+                <span class="price-old">3,200</span>
+                <span class="badge">Active</span>
+            </div>
+            <div class="section">
+                <h4>Short Description</h4>
+                <p>Lightweight running shoe with breathable mesh and responsive cushioning.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="card section">
+        <h4>Gallery</h4>
+        <div class="gallery-grid">
+            <img src="/images/placeholder.png" alt="Gallery 1" />
+            <img src="/images/placeholder.png" alt="Gallery 2" />
+            <img src="/images/placeholder.png" alt="Gallery 3" />
+        </div>
+    </div>
+
+    <div class="card section">
+        <h4>Highlights</h4>
+        <ul>
+            <li><strong>Lightweight</strong> upper for all-day comfort</li>
+            <li>Breathable mesh keeps feet cool</li>
+            <li>Responsive cushioning for smooth rides</li>
+        </ul>
+    </div>
+
+    <div class="card section">
+        <h4>Technical Details</h4>
+        <div class="spec-grid">
+            <div class="spec-item">Drop: 10mm</div>
+            <div class="spec-item">Material: Engineered mesh</div>
+            <div class="spec-item">Midsole: EVA foam</div>
+            <div class="spec-item">Outsole: Rubber</div>
+            <div class="spec-item">Weight: 250g</div>
+        </div>
+    </div>
+
+    <div class="card section">
+        <h4>Colors & Sizes</h4>
+        <div class="color-block">
+            <div class="hero-meta">
+                <span>Color: Black</span>
+                <span>Stock: 120</span>
+            </div>
+            <table class="size-table">
+                <thead>
+                    <tr>
+                        <th>Size Type</th>
+                        <th>Size</th>
+                        <th>Stock</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>EU</td>
+                        <td>40</td>
+                        <td>50</td>
+                        <td>Active</td>
+                    </tr>
+                    <tr>
+                        <td>EU</td>
+                        <td>41</td>
+                        <td>35</td>
+                        <td>Active</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

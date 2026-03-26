@@ -1,0 +1,46 @@
+@model WebApp1.Models.Db.Customer
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Edit User";
+}
+
+<link rel="stylesheet" href="~/css/UserEditStyle.css" asp-append-version="true">
+
+<div class="container">
+    <h2>Edit User</h2>
+    <form asp-action="UserEdit" asp-controller="User" method="post">
+        <input asp-for="UserId" type="hidden" />
+
+        <div class="form-group">
+            <label asp-for="NameCustomer"></label>
+            <input asp-for="NameCustomer" class="form-control" />
+        </div>
+
+        <div class="form-group">
+            <label asp-for="LastnameCustomer"></label>
+            <input asp-for="LastnameCustomer" class="form-control" />
+        </div>
+
+        <div class="form-group">
+            <label asp-for="EmailCustomer"></label>
+            <input asp-for="EmailCustomer" class="form-control" />
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Phonenumber"></label>
+            <input asp-for="Phonenumber" class="form-control" />
+        </div>
+
+        <div class="form-group">
+            <label asp-for="BirthDate"></label>
+            <input asp-for="BirthDate" type="date" class="form-control" />
+        </div>
+
+        <div class="form-group">
+            <label asp-for="Password"></label>
+            <input asp-for="Password" type="password" class="form-control" />
+        </div>
+
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+    </form>
+</div>
