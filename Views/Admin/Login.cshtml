@@ -1,5 +1,16 @@
+
 @{
     Layout = "_AdminLoginLayout";
+}
+
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="alert alert-danger">
+        @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+        {
+            <div>@error.ErrorMessage</div>
+        }
+    </div>
 }
 
 <div class="login-container">
@@ -8,7 +19,7 @@
         <p>Sign in to your account</p>
     </div>
     
-    <form action="/Admin/Login" class="login-form">
+    <form action="/Admin/Login" method="post" class="login-form">
         <div class="form-group">
             <label for="inputAdminEmail">Email</label>
             <input type="email" id="inputAdminEmail" name="email" placeholder="Email" required>

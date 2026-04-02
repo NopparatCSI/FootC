@@ -1,3 +1,4 @@
+
 DB Schema (Proposed)
 =====================
 
@@ -73,9 +74,94 @@ Indexes (suggested)
 - IX_ProductSizes_ProductColorId (ProductColorId)
 - IX_ProductSizes_SizeType (SizeType)
 
-Notes
-- Images should be stored as files; ImageUrl stores the path.
-- SortOrder can be computed by drag ordering; keep nullable if optional.
-- C# string -> SQL nvarchar
-- C# decimal -> SQL decimal
-- C# bool -> SQL bit
+
+=====================
+Data Dictionary (Current)
+=====================
+
+Table: Products
+	- Id: int, Primary Key, Identity
+	- Name: nvarchar(200), Required
+	- SKU: nvarchar(100), Required, Unique
+	- Brand: nvarchar(100), Required
+	- Category: nvarchar(100), Required
+	- Gender: nvarchar(50), Required
+	- Status: nvarchar(20), Required (Draft | Active | Inactive)
+	- RegularPrice: decimal(18,2), Required
+	- SalePrice: decimal(18,2), Nullable
+	- DiscountPercent: decimal(5,2), Nullable
+	- CostPrice: decimal(18,2), Nullable
+	- ShortDescription: nvarchar(500), Required
+	- FullDescription: nvarchar(max), Nullable
+	- HighlightFeatures: nvarchar(max), Nullable
+	- TechnicalDetails: nvarchar(max), Nullable
+	- ShowOnHomepage: bit, Default 0
+	- CreatedAt: datetime, Default getdate()
+	- UpdatedAt: datetime, Nullable
+
+Table: ProductImages
+	- Id: int, Primary Key, Identity
+	- ProductId: int, Foreign Key → Products.Id
+	- ImageUrl: nvarchar(500), Required
+	- ImageType: nvarchar(20), Required (Thumbnail | Gallery)
+	- SortOrder: int, Nullable
+
+Table: ProductColors
+	- Id: int, Primary Key, Identity
+	- ProductId: int, Foreign Key → Products.Id
+	- ColorName: nvarchar(100), Required
+
+Table: ProductColorImages
+	- Id: int, Primary Key, Identity
+	- ProductColorId: int, Foreign Key → ProductColors.Id
+	- ImageUrl: nvarchar(500), Required
+	- SortOrder: int, Nullable
+
+Table: ProductSizes
+	- Id: int, Primary Key, Identity
+	- ProductColorId: int, Foreign Key → ProductColors.Id
+	- SizeType: nvarchar(10), Required (EU | US)
+	- SizeValue: nvarchar(20), Required
+	- StockQuantity: int, Default 0
+	- Status: nvarchar(20), Required (Active | Inactive)
+
+Table: Brands
+	- BrandId: int, Primary Key
+	- BrandName: nvarchar, Required
+	- Description: nvarchar, Nullable
+	- IsActive: bit, Nullable
+	- CreatedAt: datetime, Required
+
+Table: Categories
+	- CategoryId: int, Primary Key
+	- CategoryName: nvarchar, Required
+	- ParentId: int, Nullable (NULL = parent, value = sub-category)
+	- IsActive: bit, Nullable
+	- CreatedAt: datetime, Required
+
+Table: Adminuser
+	- AdminUserId: nvarchar, Primary Key
+	- NameAdmin: nvarchar, Nullable
+	- LastnameAdmin: nvarchar, Nullable
+	- EmailAdmin: nvarchar, Nullable
+	- Password: nvarchar, Nullable
+	- PhonenumberAdmin: nvarchar, Nullable
+	- BirthDate: date, Nullable
+	- CreatedAt: datetime, Nullable
+	- UpdatedAt: datetime, Nullable
+
+Table: Customer
+	- UserId: int, Primary Key
+	- NameCustomer: nvarchar, Nullable
+	- LastnameCustomer: nvarchar, Nullable
+	- EmailCustomer: nvarchar, Nullable
+	- Password: nvarchar, Nullable
+	- Phonenumber: nvarchar, Nullable
+	- BirthDate: date, Nullable
+	- Utimestamp: datetime, Nullable
+
+Table: Labstudent
+	- StdId: nvarchar, Primary Key
+	- StdPassword: nvarchar, Nullable
+	- StdName: nvarchar, Nullable
+	- StdLastName: nvarchar, Nullable

@@ -1,0 +1,357 @@
+@using WebApp1.ViewModels
+@model OrdersListViewModel
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Order List";
+}
+
+<link rel="stylesheet" href="~/css/OrdersListStyle.css" asp-append-version="true" />
+
+<div class="orders-list-page">
+
+    <!-- Page Header -->
+    <div class="page-header">
+        <div>
+            <h2 class="page-title">Orders</h2>
+            <p class="page-subtitle">Manage and track all customer orders</p>
+        </div>
+        <div class="header-stats">
+            <span class="stat-badge">
+                <i class="bi bi-receipt"></i>
+                <span>@Model.TotalOrders Total</span>
+            </span>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="summary-cards">
+        <div class="summary-card">
+            <div class="summary-icon icon-all"><i class="bi bi-receipt-cutoff"></i></div>
+            <div class="summary-info">
+                <span class="summary-value">@Model.TotalOrders</span>
+                <span class="summary-label">All Orders</span>
+            </div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-icon icon-pending"><i class="bi bi-clock"></i></div>
+            <div class="summary-info">
+                <span class="summary-value">@Model.PendingCount</span>
+                <span class="summary-label">Pending</span>
+            </div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-icon icon-processing"><i class="bi bi-gear"></i></div>
+            <div class="summary-info">
+                <span class="summary-value">@Model.ProcessingCount</span>
+                <span class="summary-label">Processing</span>
+            </div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-icon icon-shipped"><i class="bi bi-truck"></i></div>
+            <div class="summary-info">
+                <span class="summary-value">@Model.ShippedCount</span>
+                <span class="summary-label">Shipped</span>
+            </div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-icon icon-delivered"><i class="bi bi-check-circle"></i></div>
+            <div class="summary-info">
+                <span class="summary-value">@Model.DeliveredCount</span>
+                <span class="summary-label">Delivered</span>
+            </div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-icon icon-revenue"><i class="bi bi-currency-exchange"></i></div>
+            <div class="summary-info">
+                <span class="summary-value">฿@Model.TotalRevenue.ToString("N0")</span>
+                <span class="summary-label">Revenue</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+        <div class="search-box">
+            <i class="bi bi-search"></i>
+            <input type="text" id="filterSearch" placeholder="Search by order number or customer name..." />
+        </div>
+        <select id="filterStatus">
+            <option value="">All Status</option>
+            <option value="Pending">Pending</option>
+            <option value="Processing">Processing</option>
+            <option value="Shipped">Shipped</option>
+            <option value="Delivered">Delivered</option>
+            <option value="Cancelled">Cancelled</option>
+        </select>
+        <select id="filterPayment">
+            <option value="">All Payments</option>
+            <option value="Paid">Paid</option>
+            <option value="Pending">Payment Pending</option>
+            <option value="Failed">Failed</option>
+        </select>
+    </div>
+
+    <!-- Table Card -->
+    <div class="table-card">
+        <div class="table-header">
+            <span>All Orders (@Model.TotalOrders)</span>
+            <a class="btn-export" asp-controller="Order" asp-action="ExportOrdersCsv" title="Export CSV">
+                <i class="bi bi-download"></i> Export CSV
+            </a>
+        </div>
+        <div class="table-wrapper">
+            <table class="orders-table" id="ordersTable">
+                <thead>
+                    <tr>
+                        <th>Order No.</th>
+                        <th>Customer</th>
+                        <th>Items</th>
+                        <th>Total</th>
+                        <th>Payment</th>
+                        <th>Status</th>
+                        <th>Date</th>
+                        <th style="width:56px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var o in Model.Orders)
+                    {
+                        <tr data-search="@o.OrderNumber.ToLower() @o.CustomerName.ToLower()"
+                            data-status="@o.Status"
+                            data-payment="@o.PaymentStatus">
+                            <td><span class="order-number">@o.OrderNumber</span></td>
+                            <td>
+                                <div class="customer-cell">
+                                    <div class="customer-avatar">
+                                        @(o.CustomerName.Length > 0 ? o.CustomerName[0].ToString() : "?")
+                                    </div>
+                                    <div>
+                                        <div class="customer-name">@o.CustomerName</div>
+                                        <div class="customer-email">@o.CustomerEmail</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>@o.ItemCount item@(o.ItemCount > 1 ? "s" : "")</td>
+                            <td class="amount-col">฿@o.TotalAmount.ToString("N0")</td>
+                            <td>
+                                <span class="payment-badge payment-@o.PaymentStatus.ToLower()">
+                                    @o.PaymentStatus
+                                </span>
+                            </td>
+                            <td>
+                                <span class="status-pill status-@o.Status.ToLower()">@o.Status</span>
+                            </td>
+                            <td class="date-col">@o.OrderDate.ToString("dd MMM yyyy")</td>
+                            <td>
+                                <!-- Kebab dropdown -->
+                                <div class="action-dropdown">
+                                    <button class="btn-kebab" title="Actions">&#8942;</button>
+                                    <div class="dropdown-menu-custom">
+
+                                        <a class="dropdown-item-custom"
+                                           asp-controller="Order" asp-action="OrderStatus" asp-route-id="@o.OrderId">
+                                            <i class="bi bi-eye"></i> View Status
+                                        </a>
+
+                                        <div class="dropdown-divider-custom"></div>
+
+                                        <form asp-controller="Order" asp-action="AdvanceStatus" method="post">
+                                            <input type="hidden" name="orderId" value="@o.OrderId" />
+                                            <button type="submit" class="dropdown-item-custom">
+                                                <i class="bi bi-arrow-repeat"></i> Update Status
+                                            </button>
+                                        </form>
+
+                                        <form asp-controller="Order" asp-action="CyclePaymentStatus" method="post">
+                                            <input type="hidden" name="orderId" value="@o.OrderId" />
+                                            <button type="submit" class="dropdown-item-custom">
+                                                <i class="bi bi-wallet2"></i> Update Payment
+                                            </button>
+                                        </form>
+
+                                        <div class="dropdown-divider-custom"></div>
+
+                                        <button type="button"
+                                                class="dropdown-item-custom js-track"
+                                                data-order-id="@o.OrderId"
+                                                data-shipping-method="@o.ShippingMethod"
+                                                data-tracking-number="@o.TrackingNumber">
+                                            <i class="bi bi-truck"></i> Edit Tracking
+                                        </button>
+
+                                        <button type="button"
+                                                class="dropdown-item-custom js-copy-tracking"
+                                                data-order-number="@o.OrderNumber"
+                                                data-tracking-number="@o.TrackingNumber">
+                                            <i class="bi bi-clipboard"></i> Copy Tracking
+                                        </button>
+
+                                        <a class="dropdown-item-custom" target="_blank"
+                                           asp-controller="Order" asp-action="PrintInvoice" asp-route-id="@o.OrderId">
+                                            <i class="bi bi-printer"></i> Print Invoice
+                                        </a>
+
+                                        <div class="dropdown-divider-custom"></div>
+
+                                        <form asp-controller="Order" asp-action="RefundOrder" method="post"
+                                              onsubmit="return confirm('Mark this order as refunded?');">
+                                            <input type="hidden" name="orderId" value="@o.OrderId" />
+                                            <button type="submit" class="dropdown-item-custom item-danger">
+                                                <i class="bi bi-arrow-counterclockwise"></i> Refund Order
+                                            </button>
+                                        </form>
+
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+        <div class="empty-state" id="ordersEmpty" style="display:none;">
+            <i class="bi bi-inbox fs-2 mb-2 d-block"></i>
+            No orders match your filters.
+        </div>
+    </div>
+
+    <!-- Tracking Modal -->
+    <div class="tracking-modal-backdrop" id="trackingBackdrop">
+        <div class="tracking-modal">
+            <h5><i class="bi bi-truck me-2"></i>Edit Tracking</h5>
+            <form asp-controller="Order" asp-action="UpdateTracking" method="post" id="trackingForm">
+                <input type="hidden" name="orderId" id="trackingOrderId" />
+                <label>Shipping Method</label>
+                <input type="text" name="shippingMethod" id="trackingShippingMethod" placeholder="e.g. Kerry Express" />
+                <label>Tracking Number</label>
+                <input type="text" name="trackingNumber" id="trackingNumber" placeholder="e.g. TH0000000001" />
+                <div class="tracking-modal-actions">
+                    <button type="button" class="btn-modal-cancel" id="trackingCancel">Cancel</button>
+                    <button type="submit" class="btn-modal-save">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="orderToast">
+        <i class="bi bi-check-circle-fill"></i>
+        <span id="orderToastMsg"></span>
+    </div>
+
+    @if (TempData["OrderActionMessage"] is string serverMsg)
+    {
+        <script>window.__serverToast = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(serverMsg));</script>
+    }
+    @if (TempData["ErrorMessage"] is string errorMsg)
+    {
+        <script>window.__serverErrorToast = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(errorMsg));</script>
+    }
+
+</div>
+
+@section Scripts {
+<script>
+(function () {
+    /* ── Filter ── */
+    const search  = document.getElementById('filterSearch');
+    const status  = document.getElementById('filterStatus');
+    const payment = document.getElementById('filterPayment');
+    const rows    = Array.from(document.querySelectorAll('#ordersTable tbody tr'));
+    const empty   = document.getElementById('ordersEmpty');
+
+    function filter() {
+        const q = (search.value || '').trim().toLowerCase();
+        const s = status.value;
+        const p = payment.value;
+        let shown = 0;
+        rows.forEach(row => {
+            const ok = (!q || row.dataset.search.includes(q))
+                    && (!s || row.dataset.status  === s)
+                    && (!p || row.dataset.payment === p);
+            row.style.display = ok ? '' : 'none';
+            if (ok) shown++;
+        });
+        empty.style.display = shown === 0 ? 'flex' : 'none';
+    }
+    [search, status, payment].forEach(el => {
+        el.addEventListener('input',  filter);
+        el.addEventListener('change', filter);
+    });
+    filter();
+
+    /* ── Toast ── */
+    const toast = document.getElementById('orderToast');
+    const toastMsg = document.getElementById('orderToastMsg');
+    let toastTimer;
+    function showToast(msg, isError) {
+        toastMsg.textContent = msg;
+        toast.classList.toggle('error', !!isError);
+        toast.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(() => toast.classList.remove('show'), 3200);
+    }
+    if (window.__serverToast) showToast(window.__serverToast, false);
+    if (window.__serverErrorToast) showToast(window.__serverErrorToast, true);
+
+    /* ── Dropdown ── */
+    document.addEventListener('click', e => {
+        const kebab = e.target.closest('.btn-kebab');
+        if (kebab) {
+            const dd = kebab.closest('.action-dropdown');
+            const wasOpen = dd.classList.contains('open');
+            document.querySelectorAll('.action-dropdown.open').forEach(x => x.classList.remove('open'));
+            if (!wasOpen) dd.classList.add('open');
+            return;
+        }
+        if (!e.target.closest('.action-dropdown')) {
+            document.querySelectorAll('.action-dropdown.open').forEach(x => x.classList.remove('open'));
+        }
+    });
+
+    /* ── Tracking Modal ── */
+    const backdrop = document.getElementById('trackingBackdrop');
+    const trackingOrderId = document.getElementById('trackingOrderId');
+    const trackingShippingMethod = document.getElementById('trackingShippingMethod');
+    const trackingNumber = document.getElementById('trackingNumber');
+
+    document.querySelectorAll('.js-track').forEach(btn => {
+        btn.addEventListener('click', () => {
+            trackingOrderId.value = btn.dataset.orderId;
+            trackingShippingMethod.value = btn.dataset.shippingMethod || '';
+            trackingNumber.value = btn.dataset.trackingNumber || '';
+            backdrop.classList.add('open');
+            document.querySelectorAll('.action-dropdown.open').forEach(x => x.classList.remove('open'));
+        });
+    });
+
+    document.getElementById('trackingCancel').addEventListener('click', () => {
+        backdrop.classList.remove('open');
+    });
+    backdrop.addEventListener('click', e => {
+        if (e.target === backdrop) backdrop.classList.remove('open');
+    });
+
+    /* ── Copy Tracking ── */
+    document.querySelectorAll('.js-copy-tracking').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            const tracking = btn.dataset.trackingNumber || '';
+            const orderNo  = btn.dataset.orderNumber || '';
+            document.querySelectorAll('.action-dropdown.open').forEach(x => x.classList.remove('open'));
+            if (!tracking) { showToast('No tracking number for ' + orderNo + ' yet.'); return; }
+            try {
+                await navigator.clipboard.writeText(tracking);
+            } catch {
+                const inp = document.createElement('input');
+                inp.value = tracking;
+                document.body.appendChild(inp);
+                inp.select();
+                document.execCommand('copy');
+                document.body.removeChild(inp);
+            }
+            showToast('Copied: ' + tracking);
+        });
+    });
+})();
+</script>
+}

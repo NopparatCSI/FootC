@@ -20,6 +20,10 @@ public partial class Csi402dbContext : DbContext
 
     public virtual DbSet<Brand> Brands { get; set; }
 
+    public virtual DbSet<Order> Orders { get; set; }
+
+    public virtual DbSet<OrderItem> OrderItems { get; set; }
+
     public virtual DbSet<Category> Categories { get; set; }
 
     public virtual DbSet<Customer> Customers { get; set; }
@@ -380,6 +384,80 @@ public partial class Csi402dbContext : DbContext
             entity.HasOne(d => d.Color).WithMany(p => p.ProductSizes)
                 .HasForeignKey(d => d.ColorId)
                 .HasConstraintName("FK_product_sizes_color");
+        });
+
+        modelBuilder.Entity<Order>(entity =>
+        {
+            entity.HasKey(e => e.OrderId).HasName("PRIMARY");
+
+            entity.ToTable("orders");
+
+            entity.HasIndex(e => e.OrderNumber, "UX_orders_order_number").IsUnique();
+            entity.HasIndex(e => e.UserId, "IX_orders_user_id");
+            entity.HasIndex(e => e.Status, "IX_orders_status");
+            entity.HasIndex(e => e.OrderDate, "IX_orders_order_date");
+
+            entity.Property(e => e.OrderId).HasColumnName("order_id");
+            entity.Property(e => e.OrderNumber).HasMaxLength(20).HasColumnName("order_number");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.TotalAmount).HasPrecision(18, 2).HasColumnName("total_amount");
+            entity.Property(e => e.ShippingFee).HasPrecision(18, 2).HasColumnName("shipping_fee");
+            entity.Property(e => e.Discount).HasPrecision(18, 2).HasColumnName("discount");
+            entity.Property(e => e.PaymentMethod).HasMaxLength(50).HasColumnName("payment_method");
+            entity.Property(e => e.PaymentStatus)
+                .HasColumnType("enum('Pending','Paid','Failed')")
+                .HasDefaultValueSql("'Pending'")
+                .HasColumnName("payment_status");
+            entity.Property(e => e.Status)
+                .HasColumnType("enum('Pending','Processing','Shipped','Delivered','Cancelled')")
+                .HasDefaultValueSql("'Pending'")
+                .HasColumnName("status");
+            entity.Property(e => e.ShippingAddress).HasMaxLength(500).HasColumnName("shipping_address");
+            entity.Property(e => e.ShippingMethod).HasMaxLength(100).HasColumnName("shipping_method");
+            entity.Property(e => e.TrackingNumber).HasMaxLength(100).HasColumnName("tracking_number");
+            entity.Property(e => e.OrderDate)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnType("datetime")
+                .HasColumnName("order_date");
+            entity.Property(e => e.UpdatedAt)
+                .ValueGeneratedOnAddOrUpdate()
+                .HasColumnType("datetime")
+                .HasColumnName("updated_at");
+
+            entity.HasOne(d => d.Customer).WithMany()
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .HasConstraintName("FK_orders_customer");
+        });
+
+        modelBuilder.Entity<OrderItem>(entity =>
+        {
+            entity.HasKey(e => e.OrderItemId).HasName("PRIMARY");
+
+            entity.ToTable("order_items");
+
+            entity.HasIndex(e => e.OrderId, "IX_order_items_order_id");
+            entity.HasIndex(e => e.SizeId, "IX_order_items_size_id");
+
+            entity.Property(e => e.OrderItemId).HasColumnName("order_item_id");
+            entity.Property(e => e.OrderId).HasColumnName("order_id");
+            entity.Property(e => e.SizeId).HasColumnName("size_id");
+            entity.Property(e => e.Quantity).HasColumnName("quantity");
+            entity.Property(e => e.UnitPrice).HasPrecision(18, 2).HasColumnName("unit_price");
+            entity.Property(e => e.LineTotal)
+                .HasPrecision(18, 2)
+                .HasComputedColumnSql("`quantity` * `unit_price`", stored: true)
+                .HasColumnName("line_total");
+
+            entity.HasOne(d => d.Order).WithMany(p => p.OrderItems)
+                .HasForeignKey(d => d.OrderId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_order_items_order");
+
+            entity.HasOne(d => d.ProductSize).WithMany()
+                .HasForeignKey(d => d.SizeId)
+                .OnDelete(DeleteBehavior.Restrict)
+                .HasConstraintName("FK_order_items_product_size");
         });
 
         OnModelCreatingPartial(modelBuilder);

@@ -1,0 +1,236 @@
+@using WebApp1.ViewModels
+@model OrderStatusViewModel?
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = Model != null ? "Order Status – " + Model.OrderNumber : "Order Status";
+}
+
+<link rel="stylesheet" href="~/css/OrderStatusStyle.css" asp-append-version="true" />
+
+<div class="orders-status-page">
+
+    @if (Model == null)
+    {
+        var lookupError = ViewBag.LookupError as string;
+        var lookupOrderId = ViewBag.LookupOrderId as int?;
+
+        <!-- No order selected – show search prompt -->
+        <div class="page-header">
+            <div>
+                <h2 class="page-title">Check Order Status</h2>
+                <p class="page-subtitle">Search for one order by Order ID</p>
+            </div>
+        </div>
+
+        <div class="search-prompt-card">
+            <i class="bi bi-receipt-cutoff search-prompt-icon"></i>
+            <p class="search-prompt-title">Enter an Order ID to view its details</p>
+            <p class="search-prompt-sub">Use this page only for direct lookup by Order ID.</p>
+            @if (!string.IsNullOrEmpty(lookupError))
+            {
+                <div class="alert alert-danger mt-3 mb-0" role="alert">
+                    @lookupError
+                </div>
+            }
+            <form class="search-prompt-form" method="get" asp-controller="Order" asp-action="OrderStatus">
+                <input type="number" name="id" placeholder="Order ID (e.g. 1)" min="1" value="@(lookupOrderId?.ToString() ?? string.Empty)" required />
+                <button type="submit"><i class="bi bi-search me-1"></i>Search</button>
+            </form>
+            <a class="back-to-list" asp-controller="Order" asp-action="OrdersList">
+                <i class="bi bi-list-ul me-1"></i> Go to Order List
+            </a>
+        </div>
+    }
+    else
+    {
+        <!-- Order found – show full detail -->
+
+        <!-- Page Header -->
+        <div class="page-header">
+            <div class="d-flex align-items-center gap-3">
+                <a class="btn-back" asp-controller="Order" asp-action="OrdersList" title="Back to Order List">
+                    <i class="bi bi-arrow-left"></i>
+                </a>
+                <div>
+                    <h2 class="page-title">@Model.OrderNumber</h2>
+                    <p class="page-subtitle">
+                        Placed on @Model.OrderDate.ToString("dd MMM yyyy, HH:mm")
+                        @if (Model.UpdatedAt.HasValue)
+                        {
+                            <span> · Updated @Model.UpdatedAt.Value.ToString("dd MMM yyyy, HH:mm")</span>
+                        }
+                    </p>
+                </div>
+            </div>
+            <div class="d-flex gap-2 align-items-center">
+                <span class="status-pill status-@Model.Status.ToLower() status-lg">@Model.Status</span>
+                <span class="payment-badge payment-@Model.PaymentStatus.ToLower()">@Model.PaymentStatus</span>
+            </div>
+        </div>
+
+        <!-- Timeline -->
+        <div class="detail-card detail-card-timeline">
+            <div class="detail-card-header">
+                <i class="bi bi-diagram-3 me-2"></i> Order Timeline
+            </div>
+            <div class="timeline-track">
+                @foreach (var step in Model.Timeline)
+                {
+                    <div class="timeline-step
+                        @(step.IsCompleted ? "completed" : "")
+                        @(step.IsCurrent && !step.IsCancelled ? "current" : "")
+                        @(step.IsCancelled && step.IsCurrent ? "cancelled" : "")">
+                        <div class="tl-dot">
+                            <i class="bi @step.Icon"></i>
+                        </div>
+                        <div class="tl-label">@step.StepName</div>
+                        <div class="tl-time">
+                            @(step.CompletedAt.HasValue ? step.CompletedAt.Value.ToString("dd MMM HH:mm") : "—")
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Two-column detail -->
+        <div class="detail-grid">
+
+            <!-- LEFT: items + totals -->
+            <div class="detail-col-main">
+                <div class="detail-card">
+                    <div class="detail-card-header">
+                        <i class="bi bi-box-seam me-2"></i> Order Items (@Model.Items.Count)
+                    </div>
+                    <div class="table-wrapper">
+                        <table class="items-table">
+                            <thead>
+                                <tr>
+                                    <th>Product</th>
+                                    <th>SKU</th>
+                                    <th>Color / Size</th>
+                                    <th>Qty</th>
+                                    <th>Unit Price</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model.Items)
+                                {
+                                    <tr>
+                                        <td>
+                                            <div class="item-cell">
+                                                <div class="item-thumb">
+                                                    @if (!string.IsNullOrEmpty(item.ImageUrl))
+                                                    { <img src="@item.ImageUrl" alt="@item.ProductName" /> }
+                                                    else
+                                                    { <i class="bi bi-image"></i> }
+                                                </div>
+                                                <span class="item-name">@item.ProductName</span>
+                                            </div>
+                                        </td>
+                                        <td class="mono">@item.Sku</td>
+                                        <td>@item.Color / @item.Size</td>
+                                        <td>@item.Quantity</td>
+                                        <td>฿@item.UnitPrice.ToString("N0")</td>
+                                        <td class="amount-col">฿@item.LineTotal.ToString("N0")</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Order Totals -->
+                    <div class="order-totals">
+                        <div class="totals-row">
+                            <span>Subtotal</span>
+                            <span>฿@Model.Subtotal.ToString("N0")</span>
+                        </div>
+                        <div class="totals-row">
+                            <span>Shipping (@Model.ShippingMethod)</span>
+                            <span>฿@Model.ShippingFee.ToString("N0")</span>
+                        </div>
+                        @if (Model.Discount > 0)
+                        {
+                            <div class="totals-row totals-discount">
+                                <span>Discount</span>
+                                <span>-฿@Model.Discount.ToString("N0")</span>
+                            </div>
+                        }
+                        <div class="totals-row totals-grand">
+                            <span>Grand Total</span>
+                            <span>฿@Model.GrandTotal.ToString("N0")</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT: customer / shipping / payment -->
+            <div class="detail-col-side">
+
+                <!-- Customer -->
+                <div class="detail-card mb-detail">
+                    <div class="detail-card-header">
+                        <i class="bi bi-person me-2"></i> Customer
+                    </div>
+                    <div class="info-list">
+                        <div class="info-row">
+                            <span class="info-label"><i class="bi bi-person-fill"></i> Name</span>
+                            <span class="info-value">@Model.CustomerName</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label"><i class="bi bi-envelope-fill"></i> Email</span>
+                            <span class="info-value">@Model.CustomerEmail</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label"><i class="bi bi-telephone-fill"></i> Phone</span>
+                            <span class="info-value">@Model.CustomerPhone</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Shipping -->
+                <div class="detail-card mb-detail">
+                    <div class="detail-card-header">
+                        <i class="bi bi-truck me-2"></i> Shipping
+                    </div>
+                    <div class="info-list">
+                        <div class="info-row">
+                            <span class="info-label"><i class="bi bi-geo-alt-fill"></i> Address</span>
+                            <span class="info-value">@Model.ShippingAddress</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label"><i class="bi bi-truck"></i> Carrier</span>
+                            <span class="info-value">@Model.ShippingMethod</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label"><i class="bi bi-qr-code"></i> Tracking</span>
+                            <span class="info-value mono">@Model.TrackingNumber</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payment -->
+                <div class="detail-card">
+                    <div class="detail-card-header">
+                        <i class="bi bi-credit-card me-2"></i> Payment
+                    </div>
+                    <div class="info-list">
+                        <div class="info-row">
+                            <span class="info-label"><i class="bi bi-wallet2"></i> Method</span>
+                            <span class="info-value">@Model.PaymentMethod</span>
+                        </div>
+                        <div class="info-row">
+                            <span class="info-label"><i class="bi bi-check2-circle"></i> Status</span>
+                            <span class="info-value">
+                                <span class="payment-badge payment-@Model.PaymentStatus.ToLower()">
+                                    @Model.PaymentStatus
+                                </span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    }
+</div>
