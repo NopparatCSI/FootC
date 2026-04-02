@@ -84,6 +84,12 @@ public partial class Csi402dbContext : DbContext
                 .HasColumnName("PASSWORD")
                 .UseCollation("utf8mb3_general_ci")
                 .HasCharSet("utf8mb3");
+            entity.Property(e => e.RoleName)
+                .HasMaxLength(50)
+                .HasDefaultValueSql("'Support'")
+                .HasColumnName("role_name")
+                .UseCollation("utf8mb3_general_ci")
+                .HasCharSet("utf8mb3");
             entity.Property(e => e.PhonenumberAdmin)
                 .HasMaxLength(20)
                 .HasColumnName("Phonenumber_Admin")

@@ -1,13 +1,16 @@
 using System.Diagnostics;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using WebApp1.Models;
 using WebApp1.Models.Db;
+using WebApp1.Security;
 using WebApp1.ViewModels;
 
 namespace WebApp1.Controllers;
 
+[Authorize(Policy = AdminPolicies.ManageCatalog)]
 public class ProductsController : Controller
 {
     private readonly Csi402dbContext _db;
@@ -26,6 +29,7 @@ public class ProductsController : Controller
 
     // Customer-facing product page
     // Shows only what customers should see (no cost price / internal status flags / stock numbers)
+    [AllowAnonymous]
     public IActionResult Product(int? id)
     {
         // Mock page: show only what customers should see.

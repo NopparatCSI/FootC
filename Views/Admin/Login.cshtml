@@ -1,43 +1,88 @@
 
+@model WebApp1.ViewModels.AdminLoginViewModel
 @{
     Layout = "_AdminLoginLayout";
+    ViewData["Title"] = "Admin Login";
 }
 
-@if (!ViewData.ModelState.IsValid)
-{
-    <div class="alert alert-danger">
-        @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
-        {
-            <div>@error.ErrorMessage</div>
-        }
-    </div>
-}
+<div class="login-wrapper">
 
-<div class="login-container">
-    <div class="login-header">
-        <h2>Login</h2>
-        <p>Sign in to your account</p>
-    </div>
-    
-    <form action="/Admin/Login" method="post" class="login-form">
-        <div class="form-group">
-            <label for="inputAdminEmail">Email</label>
-            <input type="email" id="inputAdminEmail" name="email" placeholder="Email" required>
+    <!-- ===== Left Brand Panel ===== -->
+    <aside class="login-brand">
+        <div class="brand-logo">
+            <i class="bi bi-shield-lock"></i>
+            Foot C Admin
         </div>
-        
-        <div class="form-group">
-            <label for="inputAdminPassword">Password</label>
-            <input type="password" id="inputAdminPassword" name="password" placeholder="Password" required>
-        </div>
-        
-        <div class="login-options">
-            <div class="form-check">
-                <input type="checkbox" id="rememberMe" name="rememberMe">
-                <label for="rememberMe">Remember me</label>
+
+        <h1 class="brand-headline">Admin<br />Control Panel</h1>
+        <p class="brand-desc">
+            จัดการสินค้า คำสั่งซื้อ และผู้ดูแลระบบ<br />
+            ด้วยสิทธิ์ที่กำหนดไว้สำหรับแต่ละ Role
+        </p>
+
+        <div class="brand-footer">© 2026 Foot C Shop · All rights reserved</div>
+    </aside>
+
+    <!-- ===== Right Form Panel ===== -->
+    <main class="login-panel">
+        <div class="login-card">
+
+            <div class="login-card-header">
+                <h2>Sign in</h2>
+                <p>Enter your admin credentials to continue</p>
             </div>
-            <a href="" class="forgot-password">Forgot Password?</a>
+
+            @if (!ViewData.ModelState.IsValid)
+            {
+                <div class="login-alert" role="alert">
+                    <i class="bi bi-exclamation-circle-fill"></i>
+                    <div>
+                        @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                        {
+                            <div>@error.ErrorMessage</div>
+                        }
+                    </div>
+                </div>
+            }
+
+            <form asp-action="Login" asp-controller="Admin" method="post" class="login-form">
+                @Html.AntiForgeryToken()
+
+                <div class="form-group">
+                    <label for="inputAdminEmail">Email</label>
+                    <div class="field-wrap">
+                        <i class="bi bi-envelope field-icon"></i>
+                        <input asp-for="Email" type="email" id="inputAdminEmail" placeholder="admin@example.com" autocomplete="email" required>
+                    </div>
+                    <span asp-validation-for="Email" class="field-error"></span>
+                </div>
+
+                <div class="form-group">
+                    <label for="inputAdminPassword">Password</label>
+                    <div class="field-wrap">
+                        <i class="bi bi-lock field-icon"></i>
+                        <input asp-for="Password" type="password" id="inputAdminPassword" placeholder="••••••••" autocomplete="current-password" required>
+                    </div>
+                    <span asp-validation-for="Password" class="field-error"></span>
+                </div>
+
+                <div class="login-options">
+                    <div class="form-check">
+                        <input asp-for="RememberMe" type="checkbox" id="rememberMe">
+                        <label for="rememberMe">Remember me</label>
+                    </div>
+                </div>
+
+                <button type="submit" class="login-button">
+                    <i class="bi bi-box-arrow-in-right me-1"></i> Sign In
+                </button>
+            </form>
+
         </div>
-        
-        <button type="submit" class="login-button">Sign In</button>
-    </form>
+    </main>
+
 </div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

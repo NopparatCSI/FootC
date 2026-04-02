@@ -1,11 +1,14 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Text;
 using WebApp1.Models.Db;
+using WebApp1.Security;
 using WebApp1.ViewModels;
 
 namespace WebApp1.Controllers
 {
+    [Authorize(Policy = AdminPolicies.ManageOrders)]
     public class OrderController : Controller
     {
         private readonly Csi402dbContext _context;

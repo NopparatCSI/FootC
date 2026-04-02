@@ -1,6 +1,14 @@
+@using System.Security.Claims
+@using WebApp1.Security
 @{
     var controller = ViewContext.RouteData.Values["controller"]?.ToString();
     var action = ViewContext.RouteData.Values["action"]?.ToString();
+    var adminName = User.Identity?.Name;
+    var adminRole = User.FindFirstValue(ClaimTypes.Role) ?? string.Empty;
+    var canManageCatalog = User.IsInRole(AdminRoles.SuperAdmin) || User.IsInRole(AdminRoles.CatalogManager);
+    var canManageOrders = User.IsInRole(AdminRoles.SuperAdmin) || User.IsInRole(AdminRoles.OrderManager);
+    var canManageUsers = User.IsInRole(AdminRoles.SuperAdmin) || User.IsInRole(AdminRoles.Support);
+    var canManageAdmins = User.IsInRole(AdminRoles.SuperAdmin);
 }
 
 <!DOCTYPE html>
@@ -37,7 +45,7 @@
 
                 <!-- Dashboard -->
                 <li class="nav-item">
-                    <a class="nav-link @(controller == "Dashboard" ? "active" : "")" asp-controller="Admin"
+                    <a class="nav-link @(controller == "Admin" && action == "Dashboard" ? "active" : "")" asp-controller="Admin"
                            asp-action="Dashboard">
                         <i class="bi bi-speedometer2 me-2"></i>
                         <span class="nav-text">Dashboard</span>
@@ -45,115 +53,127 @@
                 </li>
 
                 <!-- Products -->
-                <li class="nav-item">
-                    <a class="nav-link d-flex justify-content-between align-items-center
-                        @(controller == "Product" || controller == "Products" || controller == "Category" ? "active" : "")"
-                           data-bs-toggle="collapse"               href="#productsMenu"
-                           aria-expanded="@(controller == "Product" || controller == "Products" || controller == "Category" ? "true" : "false")">
-                        <span class="nav-label">
-                            <i class="bi bi-box-seam me-2"></i>
-                            <span class="nav-text">Products</span>
-                        </span>
-                        <i class="bi bi-chevron-down dropdown-icon"></i>
-                    </a>
+                @if (canManageCatalog)
+                {
+                    <li class="nav-item">
+                        <a class="nav-link d-flex justify-content-between align-items-center
+                            @(controller == "Product" || controller == "Products" || controller == "Category" ? "active" : "")"
+                               data-bs-toggle="collapse" href="#productsMenu"
+                               aria-expanded="@(controller == "Product" || controller == "Products" || controller == "Category" ? "true" : "false")">
+                            <span class="nav-label">
+                                <i class="bi bi-box-seam me-2"></i>
+                                <span class="nav-text">Products</span>
+                            </span>
+                            <i class="bi bi-chevron-down dropdown-icon"></i>
+                        </a>
 
-                    <ul class="collapse nav flex-column ms-4
-                        @(controller == "Product" || controller == "Products" || controller == "Category" ? "show" : "")"
-                        id="productsMenu">
+                        <ul class="collapse nav flex-column ms-4
+                            @(controller == "Product" || controller == "Products" || controller == "Category" ? "show" : "")"
+                            id="productsMenu">
 
-                        <li class="nav-item">
-                            <a class="nav-link @(action == "ProductsList" ? "active" : "")" asp-controller="Products"
-                                   asp-action="ProductsList">
-                                <span class="nav-text">All Products</span>
-                            </a>
-                        </li>
+                            <li class="nav-item">
+                                <a class="nav-link @(action == "ProductsList" ? "active" : "")" asp-controller="Products"
+                                       asp-action="ProductsList">
+                                    <span class="nav-text">All Products</span>
+                                </a>
+                            </li>
 
-                        <li class="nav-item">
-                            <a class="nav-link @(action == "ProductsCategories" ? "active" : "")" asp-controller="Products"
-                                   asp-action="ProductsCategories">
-                                <span class="nav-text">Categories</span>
-                            </a>
-                        </li>
+                            <li class="nav-item">
+                                <a class="nav-link @(action == "ProductsCategories" ? "active" : "")" asp-controller="Products"
+                                       asp-action="ProductsCategories">
+                                    <span class="nav-text">Categories</span>
+                                </a>
+                            </li>
 
-                        <li class="nav-item">
-                            <a class="nav-link @(action == "ProductsBrand" ? "active" : "")" asp-controller="Products"
-                                   asp-action="ProductsBrand">
-                                <span class="nav-text">Brands</span>
-                            </a>
-                        </li>
+                            <li class="nav-item">
+                                <a class="nav-link @(action == "ProductsBrand" ? "active" : "")" asp-controller="Products"
+                                       asp-action="ProductsBrand">
+                                    <span class="nav-text">Brands</span>
+                                </a>
+                            </li>
 
-                        <li class="nav-item">
-                            <a class="nav-link @(action == "ProductsAdd" ? "active" : "")" asp-controller="Products"
-                                   asp-action="ProductsAdd">
-                                <span class="nav-text">Add Product</span>
-                            </a>
-                        </li>
+                            <li class="nav-item">
+                                <a class="nav-link @(action == "ProductsAdd" ? "active" : "")" asp-controller="Products"
+                                       asp-action="ProductsAdd">
+                                    <span class="nav-text">Add Product</span>
+                                </a>
+                            </li>
 
-                        <li class="nav-item">
-                            <a class="nav-link @(action == "ProductsInventory" ? "active" : "")" asp-controller="Products"
-                                   asp-action="ProductsInventory">
-                                <span class="nav-text">Inventory</span>
-                            </a>
-                        </li>
-                    </ul>
-                </li>
+                            <li class="nav-item">
+                                <a class="nav-link @(action == "ProductsInventory" ? "active" : "")" asp-controller="Products"
+                                       asp-action="ProductsInventory">
+                                    <span class="nav-text">Inventory</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                }
 
                 <!-- Orders -->
-                <li class="nav-item">
-                    <a class="nav-link d-flex justify-content-between align-items-center
-                        @(controller == "Order" ? "active" : "")" data-bs-toggle="collapse" href="#ordersMenu"
-                           aria-expanded="@(controller == "Order" ? "true" : "false")">
-                        <span class="nav-label">
-                            <i class="bi bi-receipt me-2"></i>
-                            <span class="nav-text">Orders</span>
-                        </span>
-                        <i class="bi bi-chevron-down dropdown-icon"></i>
-                    </a>
+                @if (canManageOrders)
+                {
+                    <li class="nav-item">
+                        <a class="nav-link d-flex justify-content-between align-items-center
+                            @(controller == "Order" ? "active" : "")" data-bs-toggle="collapse" href="#ordersMenu"
+                               aria-expanded="@(controller == "Order" ? "true" : "false")">
+                            <span class="nav-label">
+                                <i class="bi bi-receipt me-2"></i>
+                                <span class="nav-text">Orders</span>
+                            </span>
+                            <i class="bi bi-chevron-down dropdown-icon"></i>
+                        </a>
 
-                    <ul class="collapse nav flex-column ms-4
-                        @(controller == "Order" ? "show" : "")" id="ordersMenu">
+                        <ul class="collapse nav flex-column ms-4
+                            @(controller == "Order" ? "show" : "")" id="ordersMenu">
 
-                        <li class="nav-item">
-                            <a class="nav-link @(action == "OrdersList" ? "active" : "")" asp-controller="Order"
-                                   asp-action="OrdersList">
-                                <span class="nav-text">Order List</span>
-                            </a>
-                        </li>
-                    </ul>
-                </li>
+                            <li class="nav-item">
+                                <a class="nav-link @(action == "OrdersList" ? "active" : "")" asp-controller="Order"
+                                       asp-action="OrdersList">
+                                    <span class="nav-text">Order List</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                }
 
                 <!-- Users -->
-                <li class="nav-item">
-                    <a class="nav-link d-flex justify-content-between align-items-center
-                        @(controller == "User" ? "active" : "")" data-bs-toggle="collapse" href="#usersMenu"
-                           aria-expanded="@(controller == "User" ? "true" : "false")">
-                        <span class="nav-label">
-                            <i class="bi bi-people me-2"></i>
-                            <span class="nav-text">Users</span>
-                        </span>
-                        <i class="bi bi-chevron-down dropdown-icon"></i>
-                    </a>
+                @if (canManageUsers)
+                {
+                    <li class="nav-item">
+                        <a class="nav-link d-flex justify-content-between align-items-center
+                            @(controller == "User" ? "active" : "")" data-bs-toggle="collapse" href="#usersMenu"
+                               aria-expanded="@(controller == "User" ? "true" : "false")">
+                            <span class="nav-label">
+                                <i class="bi bi-people me-2"></i>
+                                <span class="nav-text">Users</span>
+                            </span>
+                            <i class="bi bi-chevron-down dropdown-icon"></i>
+                        </a>
 
-                    <ul class="collapse nav flex-column ms-4
-                        @(controller == "User" ? "show" : "")" id="usersMenu">
+                        <ul class="collapse nav flex-column ms-4
+                            @(controller == "User" ? "show" : "")" id="usersMenu">
 
-                        <li class="nav-item">
-                            <a class="nav-link @(controller == "User" ? "active" : "")" asp-controller="User"
-                                   asp-action="Index">
-                                <span class="nav-text">User List</span>
-                            </a>
-                        </li>
-                    </ul>
-                </li>
+                            <li class="nav-item">
+                                <a class="nav-link @(controller == "User" ? "active" : "")" asp-controller="User"
+                                       asp-action="Index">
+                                    <span class="nav-text">User List</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+                }
 
                 <!-- Admin List -->
-                <li class="nav-item">
-                    <a class="nav-link @(controller == "Admin" && action == "AdminList" ? "active" : "")"
-                           asp-controller="Admin" asp-action="AdminList">
-                        <i class="bi bi-person-gear me-2"></i>
-                        <span class="nav-text">Admin List</span>
-                    </a>
-                </li>
+                @if (canManageAdmins)
+                {
+                    <li class="nav-item">
+                        <a class="nav-link @(controller == "Admin" && action == "AdminList" ? "active" : "")"
+                               asp-controller="Admin" asp-action="AdminList">
+                            <i class="bi bi-person-gear me-2"></i>
+                            <span class="nav-text">Admin List</span>
+                        </a>
+                    </li>
+                }
 
                 <!-- Logout -->
                 <li class="nav-item mt-3">
@@ -175,13 +195,13 @@
                 </button>
                 <h2>Admin Panel</h2>
                 <div class="ms-auto d-flex align-items-center">
-                    @if (Context.Session.GetString("AdminFullName") != null)
+                    @if (!string.IsNullOrWhiteSpace(adminName))
                     {
                         <div class="admin-user-box d-flex align-items-center px-3 py-1 rounded-pill" style="gap:0.5rem;">
                             <span class="avatar-circle d-flex align-items-center justify-content-center">
                                 <i class="bi bi-person" style="font-size:1.1rem;"></i>
                             </span>
-                            <span class="admin-user-name">@Context.Session.GetString("AdminFullName")</span>
+                            <span class="admin-user-name">@adminName (@adminRole)</span>
                         </div>
                     }
                 </div>

@@ -1,8 +1,11 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WebApp1.Models.Db;
+using WebApp1.Security;
 
 namespace WebApp1.Controllers;
 
+[Authorize(Policy = AdminPolicies.ManageUsers)]
 public class UserController : Controller
 {
     private readonly Csi402dbContext _context;

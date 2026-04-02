@@ -15,6 +15,8 @@ public partial class Adminuser
 
     public string? Password { get; set; }
 
+    public string RoleName { get; set; } = "Support";
+
     public string? PhonenumberAdmin { get; set; }
 
     public DateOnly? BirthDate { get; set; }

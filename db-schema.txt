@@ -145,6 +145,7 @@ Table: Adminuser
 	- LastnameAdmin: nvarchar, Nullable
 	- EmailAdmin: nvarchar, Nullable
 	- Password: nvarchar, Nullable
+	- RoleName: nvarchar(50), Required, Default = Support (SuperAdmin | CatalogManager | OrderManager | Support)
 	- PhonenumberAdmin: nvarchar, Nullable
 	- BirthDate: date, Nullable
 	- CreatedAt: datetime, Nullable

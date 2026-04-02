@@ -1,0 +1,111 @@
+@{
+    Layout = "_AdminLoginLayout";
+    ViewData["Title"] = "Access Denied";
+}
+
+<div class="login-wrapper">
+
+    <aside class="login-brand">
+        <div class="brand-logo">
+            <i class="bi bi-shield-lock"></i>
+            Foot C Admin
+        </div>
+        <h1 class="brand-headline">Access<br />Denied</h1>
+        <p class="brand-desc">
+            สิทธิ์ที่คุณมีอยู่ไม่เพียงพอ<br />
+            สำหรับการเข้าถึงหน้านี้
+        </p>
+        <div class="brand-footer">© 2026 Foot C Shop · All rights reserved</div>
+    </aside>
+
+    <main class="login-panel">
+        <div class="login-card">
+
+            <div class="login-card-header">
+                <h2>403 — Forbidden</h2>
+                <p>Role ของคุณไม่มีสิทธิ์เข้าถึงหน้านี้</p>
+            </div>
+
+            <div class="denied-detail">
+                <i class="bi bi-shield-exclamation"></i>
+                <div>
+                    <strong>ต้องการสิทธิ์สูงกว่านี้</strong>
+                    <p>กรุณาติดต่อ SuperAdmin เพื่อขอสิทธิ์เพิ่มเติม หรือกลับไปยังหน้าที่คุณมีสิทธิ์เข้าถึง</p>
+                </div>
+            </div>
+
+            <div class="denied-actions">
+                <a asp-controller="Admin" asp-action="Dashboard" class="login-button" style="display:flex;align-items:center;justify-content:center;gap:6px;text-decoration:none;">
+                    <i class="bi bi-house"></i> Back to Dashboard
+                </a>
+                <a asp-controller="Admin" asp-action="Logout" class="denied-link">
+                    <i class="bi bi-box-arrow-right"></i> Sign out
+                </a>
+            </div>
+
+        </div>
+    </main>
+
+</div>
+
+<style>
+    .denied-detail {
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        padding: 16px;
+        background: #fffbeb;
+        border: 1px solid #fde68a;
+        border-radius: 10px;
+        margin-bottom: 24px;
+        font-size: 13px;
+        color: #92400e;
+    }
+
+    .denied-detail i {
+        font-size: 22px;
+        flex-shrink: 0;
+        margin-top: 2px;
+        color: #d97706;
+    }
+
+    .denied-detail strong {
+        display: block;
+        margin-bottom: 4px;
+        color: #78350f;
+        font-size: 13.5px;
+    }
+
+    .denied-detail p {
+        margin: 0;
+        line-height: 1.5;
+        color: #92400e;
+    }
+
+    .denied-actions {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
+    .denied-link {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 11px;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        font-size: 13.5px;
+        font-family: "Geist Mono", monospace;
+        color: #374151;
+        text-decoration: none;
+        transition: border-color 0.15s, background 0.15s;
+    }
+
+    .denied-link:hover {
+        background: #f9fafb;
+        border-color: #d1d5db;
+        color: #111827;
+    }
+</style>

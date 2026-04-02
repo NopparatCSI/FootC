@@ -1,0 +1,99 @@
+@model WebApp1.ViewModels.AdminEditViewModel
+@using Microsoft.AspNetCore.Mvc.Rendering
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Edit Admin";
+    var roleOptions = ViewBag.RoleOptions as List<SelectListItem> ?? new List<SelectListItem>();
+}
+
+<link rel="stylesheet" href="~/css/AdminEditStyle.css" asp-append-version="true" />
+
+<div class="admin-edit-page">
+    <div class="edit-header">
+        <div>
+            <h2>Edit Admin</h2>
+            <p>Update profile information, role, and credentials for this admin account.</p>
+        </div>
+        <a asp-action="AdminList" asp-controller="Admin" class="btn-back">
+            <i class="bi bi-arrow-left"></i>
+            Back to Admin List
+        </a>
+    </div>
+
+    <div class="edit-card">
+        <form asp-action="AdminEdit" asp-controller="Admin" method="post">
+            @Html.AntiForgeryToken()
+            <input asp-for="AdminUserId" type="hidden" />
+
+            <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
+
+            <div class="edit-grid two-cols">
+                <div class="form-group">
+                    <label asp-for="FirstName"></label>
+                    <input asp-for="FirstName" class="form-input" />
+                    <span asp-validation-for="FirstName" class="field-error"></span>
+                </div>
+                <div class="form-group">
+                    <label asp-for="LastName"></label>
+                    <input asp-for="LastName" class="form-input" />
+                    <span asp-validation-for="LastName" class="field-error"></span>
+                </div>
+            </div>
+
+            <div class="edit-grid two-cols">
+                <div class="form-group">
+                    <label asp-for="Email"></label>
+                    <input asp-for="Email" class="form-input" />
+                    <span asp-validation-for="Email" class="field-error"></span>
+                </div>
+                <div class="form-group">
+                    <label asp-for="PhoneNumber"></label>
+                    <input asp-for="PhoneNumber" class="form-input" />
+                    <span asp-validation-for="PhoneNumber" class="field-error"></span>
+                </div>
+            </div>
+
+            <div class="edit-grid two-cols">
+                <div class="form-group">
+                    <label asp-for="BirthDate"></label>
+                    <input asp-for="BirthDate" type="date" class="form-input" />
+                    <span asp-validation-for="BirthDate" class="field-error"></span>
+                </div>
+                <div class="form-group">
+                    <label asp-for="RoleName"></label>
+                    <select asp-for="RoleName" asp-items="roleOptions" class="form-input"></select>
+                    <span asp-validation-for="RoleName" class="field-error"></span>
+                </div>
+            </div>
+
+            <div class="password-block">
+                <h3>Change Password (Optional)</h3>
+                <p>Leave these fields blank if you do not want to change the current password.</p>
+                <div class="edit-grid two-cols">
+                    <div class="form-group">
+                        <label asp-for="Password"></label>
+                        <input asp-for="Password" type="password" class="form-input" autocomplete="new-password" />
+                        <span asp-validation-for="Password" class="field-error"></span>
+                    </div>
+                    <div class="form-group">
+                        <label asp-for="ConfirmPassword"></label>
+                        <input asp-for="ConfirmPassword" type="password" class="form-input" autocomplete="new-password" />
+                        <span asp-validation-for="ConfirmPassword" class="field-error"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <a asp-action="AdminList" asp-controller="Admin" class="btn-cancel">Cancel</a>
+                <button type="submit" class="btn-save">
+                    <i class="bi bi-save2"></i>
+                    Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,10 +1,44 @@
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using WebApp1.Models.Db;
+using WebApp1.Security;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services
+    .AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.LoginPath = "/Admin/Login";
+        options.AccessDeniedPath = "/Admin/AccessDenied";
+        options.Cookie.Name = "WebApp1.AdminAuth";
+        options.ExpireTimeSpan = TimeSpan.FromHours(8);
+        options.SlidingExpiration = true;
+    });
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy(AdminPolicies.AccessAdminArea, policy =>
+        policy.RequireAuthenticatedUser()
+            .RequireRole(AdminRoles.All));
+
+    options.AddPolicy(AdminPolicies.ManageAdmins, policy =>
+        policy.RequireAuthenticatedUser()
+            .RequireRole(AdminRoles.SuperAdmin));
+
+    options.AddPolicy(AdminPolicies.ManageCatalog, policy =>
+        policy.RequireAuthenticatedUser()
+            .RequireRole(AdminRoles.SuperAdmin, AdminRoles.CatalogManager));
+
+    options.AddPolicy(AdminPolicies.ManageOrders, policy =>
+        policy.RequireAuthenticatedUser()
+            .RequireRole(AdminRoles.SuperAdmin, AdminRoles.OrderManager));
+
+    options.AddPolicy(AdminPolicies.ManageUsers, policy =>
+        policy.RequireAuthenticatedUser()
+            .RequireRole(AdminRoles.SuperAdmin, AdminRoles.Support));
+});
 builder.Services.AddSession(options =>
 {
     options.IdleTimeout = TimeSpan.FromMinutes(30);
@@ -31,6 +65,7 @@ app.UseRouting();
 
 app.UseSession();
 
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapStaticAssets();

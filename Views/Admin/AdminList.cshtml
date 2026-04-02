@@ -1,27 +1,82 @@
+@model WebApp1.ViewModels.AdminListViewModel
 @{
     Layout = "_AdminLayout";
     ViewData["Title"] = "Admin List";
+    var currentAdminId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
+    var totalAdmins = Model.Admins.Count;
+    var superAdminCount = Model.Admins.Count(a => string.Equals(a.RoleName, "Super Admin", StringComparison.OrdinalIgnoreCase));
+    var adminCount = Model.Admins.Count(a => string.Equals(a.RoleName, "Admin", StringComparison.OrdinalIgnoreCase));
+    var managerCount = Model.Admins.Count(a =>
+        string.Equals(a.RoleName, "Catalog Manager", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(a.RoleName, "Order Manager", StringComparison.OrdinalIgnoreCase));
 }
 
 <link rel="stylesheet" href="~/css/AdminListStyle.css" asp-append-version="true" />
 
 <div class="admins-page">
 
-    <!-- Page Header -->
-    <div class="page-header">
-        <div>
+    @if (TempData["AdminMessage"] is string successMessage)
+    {
+        <div class="admin-alert admin-alert-success">
+            <i class="bi bi-check-circle-fill"></i>
+            <span>@successMessage</span>
+        </div>
+    }
+
+    @if (TempData["AdminError"] is string errorMessage)
+    {
+        <div class="admin-alert admin-alert-error">
+            <i class="bi bi-exclamation-circle-fill"></i>
+            <span>@errorMessage</span>
+        </div>
+    }
+
+    <div class="page-hero">
+        <div class="hero-copy">
+            <span class="hero-eyebrow">Administration Center</span>
             <h2 class="page-title">Admin Users</h2>
-            <p class="page-subtitle">Manage administrators and assign roles</p>
+            <p class="page-subtitle">Manage administrators, assign roles, and keep access control organized.</p>
         </div>
         <div class="header-actions">
             <span class="stat-badge">
                 <i class="bi bi-person-gear"></i>
-                <span id="totalCount">3</span> Total
+                <span id="totalCount">@totalAdmins</span> Total
             </span>
             <button class="btn-add" data-bs-toggle="modal" data-bs-target="#addAdminModal">
                 <i class="bi bi-plus-lg"></i> Add Admin
             </button>
         </div>
+    </div>
+
+    <div class="stats-grid">
+        <article class="stat-card">
+            <div class="stat-icon"><i class="bi bi-people-fill"></i></div>
+            <div>
+                <p class="stat-label">All Admins</p>
+                <p class="stat-value">@totalAdmins</p>
+            </div>
+        </article>
+        <article class="stat-card">
+            <div class="stat-icon"><i class="bi bi-shield-lock-fill"></i></div>
+            <div>
+                <p class="stat-label">Super Admin</p>
+                <p class="stat-value">@superAdminCount</p>
+            </div>
+        </article>
+        <article class="stat-card">
+            <div class="stat-icon"><i class="bi bi-person-check-fill"></i></div>
+            <div>
+                <p class="stat-label">Admin</p>
+                <p class="stat-value">@adminCount</p>
+            </div>
+        </article>
+        <article class="stat-card">
+            <div class="stat-icon"><i class="bi bi-diagram-3-fill"></i></div>
+            <div>
+                <p class="stat-label">Managers</p>
+                <p class="stat-value">@managerCount</p>
+            </div>
+        </article>
     </div>
 
     <!-- Filter Bar -->
@@ -32,97 +87,98 @@
         </div>
         <select id="filterRole">
             <option value="">All Roles</option>
-            <option value="admin">Admin</option>
-            <option value="user">User</option>
+            @foreach (var role in Model.RoleOptions)
+            {
+                <option value="@role.Value.ToLowerInvariant()">@role.Text</option>
+            }
         </select>
+        <button type="button" id="clearFilters" class="btn-filter-reset">
+            <i class="bi bi-arrow-counterclockwise"></i>
+            Reset
+        </button>
     </div>
 
     <!-- Table Card -->
     <div class="table-card">
         <div class="table-header">
             <span>All Administrators</span>
+            <span class="table-meta" id="tableMeta">Showing @totalAdmins of @totalAdmins</span>
         </div>
 
         <div class="table-wrapper">
             <table class="admin-table" id="adminTable">
+                <colgroup>
+                    <col class="col-index" />
+                    <col class="col-name" />
+                    <col class="col-email" />
+                    <col class="col-phone" />
+                    <col class="col-birth" />
+                    <col class="col-role" />
+                    <col class="col-actions" />
+                </colgroup>
                 <thead>
                     <tr>
-                        <th>#</th>
+                        <th class="cell-index">#</th>
                         <th>Name</th>
                         <th>Email</th>
                         <th>Phone</th>
                         <th>Birth Date</th>
                         <th>Role</th>
-                        <th>Actions</th>
+                        <th class="cell-actions">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr data-name="John Doe" data-email="john.doe@example.com" data-phone="081-234-5678" data-role="admin">
-                        <td>1</td>
-                        <td>
-                            <div class="user-cell">
-                                <div class="user-avatar">J</div>
-                                <div>
-                                    <div class="user-name">John Doe</div>
-                                    <div class="user-id">ID: ADM001</div>
+                    @for (var index = 0; index < Model.Admins.Count; index++)
+                    {
+                        var admin = Model.Admins[index];
+                        var initial = string.IsNullOrWhiteSpace(admin.FullName) ? "A" : admin.FullName[0].ToString().ToUpperInvariant();
+                        <tr data-name="@admin.FullName" data-email="@admin.Email" data-phone="@admin.PhoneNumber" data-role="@admin.RoleName.ToLowerInvariant()">
+                            <td class="cell-index">@(index + 1)</td>
+                            <td>
+                                <div class="user-cell">
+                                    <div class="user-avatar">@initial</div>
+                                    <div>
+                                        <div class="user-name">@admin.FullName</div>
+                                        <div class="user-id">ID: @admin.AdminUserId</div>
+                                    </div>
                                 </div>
-                            </div>
-                        </td>
-                        <td>john.doe&#64;example.com</td>
-                        <td>081-234-5678</td>
-                        <td>1990-01-01</td>
-                        <td><span class="role-badge role-admin">Admin</span></td>
-                        <td>
-                            <div class="table-actions">
-                                <button class="btn-action" title="Edit"><i class="bi bi-pencil"></i></button>
-                                <button class="btn-action btn-danger" title="Delete"><i class="bi bi-trash"></i></button>
-                            </div>
-                        </td>
-                    </tr>
-                    <tr data-name="Jane Smith" data-email="jane.smith@example.com" data-phone="082-345-6789" data-role="admin">
-                        <td>2</td>
-                        <td>
-                            <div class="user-cell">
-                                <div class="user-avatar">J</div>
-                                <div>
-                                    <div class="user-name">Jane Smith</div>
-                                    <div class="user-id">ID: ADM002</div>
+                            </td>
+                            <td class="cell-email">@admin.Email</td>
+                            <td class="cell-phone">@admin.PhoneNumber</td>
+                            <td class="cell-birth">@admin.BirthDateText</td>
+                            <td>
+                                <div class="role-cell">
+                                    <span class="role-badge @admin.RoleBadgeClass">@admin.RoleName</span>
+                                    <span class="role-hint">Role managed from Edit page</span>
                                 </div>
-                            </div>
-                        </td>
-                        <td>jane.smith&#64;example.com</td>
-                        <td>082-345-6789</td>
-                        <td>1992-05-15</td>
-                        <td><span class="role-badge role-admin">Admin</span></td>
-                        <td>
-                            <div class="table-actions">
-                                <button class="btn-action" title="Edit"><i class="bi bi-pencil"></i></button>
-                                <button class="btn-action btn-danger" title="Delete"><i class="bi bi-trash"></i></button>
-                            </div>
-                        </td>
-                    </tr>
-                    <tr data-name="Bob Johnson" data-email="bob.johnson@example.com" data-phone="083-456-7890" data-role="user">
-                        <td>3</td>
-                        <td>
-                            <div class="user-cell">
-                                <div class="user-avatar">B</div>
-                                <div>
-                                    <div class="user-name">Bob Johnson</div>
-                                    <div class="user-id">ID: ADM003</div>
+                            </td>
+                            <td class="cell-actions">
+                                <div class="table-actions">
+                                    <a class="btn-action" asp-action="AdminEdit" asp-controller="Admin" asp-route-id="@admin.AdminUserId" title="Edit @admin.FullName">
+                                        <i class="bi bi-pencil-square"></i>
+                                    </a>
+                                    @if (string.Equals(admin.AdminUserId, currentAdminId, StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        <button type="button" class="btn-action btn-danger" title="You cannot delete your own account" disabled>
+                                            <i class="bi bi-lock-fill"></i>
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <button type="button"
+                                                class="btn-action btn-danger"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#deleteAdminModal"
+                                                data-admin-id="@admin.AdminUserId"
+                                                data-admin-name="@admin.FullName"
+                                                title="Delete @admin.FullName">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    }
                                 </div>
-                            </div>
-                        </td>
-                        <td>bob.johnson&#64;example.com</td>
-                        <td>083-456-7890</td>
-                        <td>1995-12-25</td>
-                        <td><span class="role-badge role-user">User</span></td>
-                        <td>
-                            <div class="table-actions">
-                                <button class="btn-action" title="Edit"><i class="bi bi-pencil"></i></button>
-                                <button class="btn-action btn-danger" title="Delete"><i class="bi bi-trash"></i></button>
-                            </div>
-                        </td>
-                    </tr>
+                            </td>
+                        </tr>
+                    }
                 </tbody>
             </table>
         </div>
@@ -130,6 +186,34 @@
         <div class="empty-state" id="adminsEmpty" style="display:none;">
             <i class="bi bi-person-x" style="font-size:28px;color:#999;"></i>
             <p>No administrators match your search.</p>
+        </div>
+    </div>
+</div>
+
+<!-- ===== Delete Admin Modal ===== -->
+<div class="modal fade" id="deleteAdminModal" tabindex="-1" aria-labelledby="deleteAdminLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content admin-modal delete-modal">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteAdminLabel">
+                    <i class="bi bi-exclamation-triangle-fill text-danger me-2"></i>Delete Admin
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form asp-action="DeleteAdmin" asp-controller="Admin" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" id="deleteAdminId" name="adminUserId" />
+                <div class="modal-body">
+                    <p class="delete-copy">This action cannot be undone.</p>
+                    <p class="delete-target" id="deleteAdminTarget">Are you sure you want to delete this admin?</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn-cancel" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn-delete-confirm">
+                        <i class="bi bi-trash"></i> Delete
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
@@ -144,67 +228,77 @@
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <form>
+            <form asp-action="CreateAdmin" asp-controller="Admin" method="post">
+                @Html.AntiForgeryToken()
                 <div class="modal-body">
                     <div class="form-row">
                         <div class="form-group">
                             <label for="inputFirstName">First Name</label>
-                            <input type="text" id="inputFirstName" name="firstName" class="form-input"
+                            <input asp-for="CreateAdmin.FirstName" type="text" id="inputFirstName" class="form-input"
                                 placeholder="Enter first name" required>
+                            <span asp-validation-for="CreateAdmin.FirstName" class="text-danger"></span>
                         </div>
                         <div class="form-group">
                             <label for="inputLastName">Last Name</label>
-                            <input type="text" id="inputLastName" name="lastName" class="form-input"
+                            <input asp-for="CreateAdmin.LastName" type="text" id="inputLastName" class="form-input"
                                 placeholder="Enter last name" required>
+                            <span asp-validation-for="CreateAdmin.LastName" class="text-danger"></span>
                         </div>
                     </div>
                     <div class="form-group">
                         <label for="inputEmail">Email</label>
                         <div class="input-icon">
                             <i class="bi bi-envelope"></i>
-                            <input type="email" id="inputEmail" name="email" class="form-input has-icon"
+                            <input asp-for="CreateAdmin.Email" type="email" id="inputEmail" class="form-input has-icon"
                                 placeholder="admin@example.com" required>
                         </div>
+                        <span asp-validation-for="CreateAdmin.Email" class="text-danger"></span>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
                             <label for="inputPassword">Password</label>
                             <div class="input-icon">
                                 <i class="bi bi-lock"></i>
-                                <input type="password" id="inputPassword" name="password" class="form-input has-icon"
+                                <input asp-for="CreateAdmin.Password" type="password" id="inputPassword" class="form-input has-icon"
                                     placeholder="••••••••" required>
                             </div>
+                            <span asp-validation-for="CreateAdmin.Password" class="text-danger"></span>
                         </div>
                         <div class="form-group">
                             <label for="inputConfirmPassword">Confirm Password</label>
                             <div class="input-icon">
                                 <i class="bi bi-lock-fill"></i>
-                                <input type="password" id="inputConfirmPassword" name="confirmPassword"
+                                <input asp-for="CreateAdmin.ConfirmPassword" type="password" id="inputConfirmPassword"
                                     class="form-input has-icon" placeholder="••••••••" required>
                             </div>
+                            <span asp-validation-for="CreateAdmin.ConfirmPassword" class="text-danger"></span>
                         </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group">
                             <label for="birthdate">Birth Date</label>
-                            <input type="date" id="birthdate" name="birthdate" class="form-input">
+                            <input asp-for="CreateAdmin.BirthDate" type="date" id="birthdate" class="form-input">
                         </div>
                         <div class="form-group">
                             <label for="phonenumber">Phone Number</label>
                             <div class="input-icon">
                                 <i class="bi bi-telephone"></i>
-                                <input type="tel" id="phonenumber" name="phoneNumber" class="form-input has-icon"
+                                <input asp-for="CreateAdmin.PhoneNumber" type="tel" id="phonenumber" class="form-input has-icon"
                                     placeholder="08x-xxx-xxxx">
                             </div>
+                            <span asp-validation-for="CreateAdmin.PhoneNumber" class="text-danger"></span>
                         </div>
                     </div>
                     <div class="form-group">
                         <label for="inputRoles">Role</label>
-                        <select id="inputRoles" name="roles" class="form-input" required>
+                        <select asp-for="CreateAdmin.RoleName" id="inputRoles" class="form-input" required>
                             <option value="">Select Role</option>
-                            <option value="admin">Admin</option>
-                            <option value="user">User</option>
+                            @foreach (var role in Model.RoleOptions)
+                            {
+                                <option value="@role.Value">@role.Text</option>
+                            }
                         </select>
+                        <span asp-validation-for="CreateAdmin.RoleName" class="text-danger"></span>
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -223,9 +317,15 @@
     (function () {
         const searchInput = document.getElementById('filterSearch');
         const roleSelect = document.getElementById('filterRole');
+        const clearFiltersBtn = document.getElementById('clearFilters');
         const table = document.getElementById('adminTable');
         const emptyState = document.getElementById('adminsEmpty');
+        const tableMeta = document.getElementById('tableMeta');
+        const deleteModal = document.getElementById('deleteAdminModal');
+        const deleteAdminIdInput = document.getElementById('deleteAdminId');
+        const deleteAdminTarget = document.getElementById('deleteAdminTarget');
         const rows = table ? Array.from(table.querySelectorAll('tbody tr')) : [];
+        const totalRows = rows.length;
 
         function applyFilters() {
             const query = (searchInput.value || '').toLowerCase();
@@ -255,9 +355,44 @@
 
             const counter = document.getElementById('totalCount');
             if (counter) counter.textContent = visible;
+
+            if (tableMeta) {
+                tableMeta.textContent = 'Showing ' + visible + ' of ' + totalRows;
+            }
         }
 
         if (searchInput) searchInput.addEventListener('input', applyFilters);
         if (roleSelect) roleSelect.addEventListener('change', applyFilters);
+        if (clearFiltersBtn) {
+            clearFiltersBtn.addEventListener('click', function () {
+                if (searchInput) searchInput.value = '';
+                if (roleSelect) roleSelect.value = '';
+                applyFilters();
+            });
+        }
+
+        if (deleteModal) {
+            deleteModal.addEventListener('show.bs.modal', function (event) {
+                const trigger = event.relatedTarget;
+                if (!trigger) {
+                    return;
+                }
+
+                const adminId = trigger.getAttribute('data-admin-id') || '';
+                const adminName = trigger.getAttribute('data-admin-name') || 'this admin';
+
+                if (deleteAdminIdInput) {
+                    deleteAdminIdInput.value = adminId;
+                }
+
+                if (deleteAdminTarget) {
+                    deleteAdminTarget.textContent = 'Are you sure you want to delete ' + adminName + '?';
+                }
+            });
+        }
     })();
 </script>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
