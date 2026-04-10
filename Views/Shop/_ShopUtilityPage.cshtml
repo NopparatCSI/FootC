@@ -1,0 +1,55 @@
+@model WebApp1.ViewModels.ShopUtilityPageViewModel
+
+<div class="shop-page-shell shop-utility-shell">
+    <section class="shop-page-hero shop-utility-hero">
+        <div>
+            <p class="shop-page-eyebrow">@Model.Eyebrow</p>
+            <h1 class="shop-page-title">@Model.Title</h1>
+            <p class="shop-page-description">@Model.Description</p>
+        </div>
+        <a asp-controller="@Model.ActionController" asp-action="@Model.ActionName" class="shop-primary-link">@Model.ActionText</a>
+    </section>
+
+    <section class="shop-utility-panel">
+        <h2>Starter State</h2>
+        <p>@Model.Message</p>
+    </section>
+
+    @if (Model.RecommendedProducts.Count > 0)
+    {
+        <section class="shop-recommendations">
+            <div class="shop-recommendations-head">
+                <h2>Recommended Products</h2>
+                <a asp-controller="Shop" asp-action="NewArrivals">See all</a>
+            </div>
+            <section class="shop-product-grid shop-product-grid-compact">
+                @foreach (var product in Model.RecommendedProducts)
+                {
+                    var hasSale = product.SalePrice.HasValue && product.SalePrice.Value > 0 && product.SalePrice.Value < product.RegularPrice;
+                    var currentPrice = hasSale ? product.SalePrice!.Value : product.RegularPrice;
+
+                    <article class="shop-product-card shop-product-card-compact">
+                        <a asp-controller="Products" asp-action="Product" asp-route-id="@product.ProductId" class="shop-card-media">
+                            <img src="@product.ImageUrl" alt="@product.Name" />
+                        </a>
+                        <div class="shop-card-body">
+                            <div class="shop-card-meta">
+                                <span>@product.BrandName</span>
+                                <span>@product.Gender</span>
+                            </div>
+                            <h2 class="shop-card-title">
+                                <a asp-controller="Products" asp-action="Product" asp-route-id="@product.ProductId">@product.Name</a>
+                            </h2>
+                            <div class="shop-card-footer">
+                                <div class="shop-price-block">
+                                    <span class="shop-price-current">฿@currentPrice.ToString("N0")</span>
+                                </div>
+                                <a asp-controller="Products" asp-action="Product" asp-route-id="@product.ProductId" class="shop-card-link">View</a>
+                            </div>
+                        </div>
+                    </article>
+                }
+            </section>
+        </section>
+    }
+</div>

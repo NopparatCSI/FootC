@@ -1,0 +1,193 @@
+@model WebApp1.ViewModels.ShopListingPageViewModel
+
+@{
+    var filtersOpenByDefault = true;
+    var categories = Model.Products
+        .Select(product => product.CategoryName)
+        .Where(name => !string.IsNullOrWhiteSpace(name))
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .OrderBy(name => name)
+        .ToList();
+
+    var genders = Model.Products
+        .Select(product => product.Gender)
+        .Where(name => !string.IsNullOrWhiteSpace(name))
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .OrderBy(name => name)
+        .ToList();
+
+    var brands = Model.Products
+        .Select(product => product.BrandName)
+        .Where(name => !string.IsNullOrWhiteSpace(name))
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .OrderBy(name => name)
+        .Take(6)
+        .ToList();
+
+    var pageTypes = new List<string> { Model.Title };
+
+    if (categories.Count == 0)
+    {
+        categories.Add(Model.Title);
+    }
+
+    if (genders.Count == 0)
+    {
+        genders.AddRange(["Men", "Women", "Unisex"]);
+    }
+
+    if (brands.Count == 0)
+    {
+        brands.AddRange(["A", "B", "C", "D"]);
+    }
+
+    var sizeOptions = new[] { "3.0 US", "3.5 US", "4.0 US", "4.5 US", "5.0 US", "5.5 US", "6.0 US", "6.5 US", "7.0 US", "7.5 US", "8.0 US", "8.5 US" };
+}
+
+<div class="shop-page-shell">
+    <section class="shop-page-hero">
+        <div>
+            <h1 class="shop-page-title">@Model.Title</h1>
+            @if (!string.IsNullOrWhiteSpace(Model.Description))
+            {
+                <p class="shop-page-description">@Model.Description</p>
+            }
+        </div>
+        <button type="button" class="shop-filter-toggle @(filtersOpenByDefault ? "filter-open" : string.Empty)" id="shopFilterToggle" aria-expanded="@(filtersOpenByDefault ? "true" : "false")" aria-controls="shopFilterPanel">
+            <span class="toggle-show">Show Filter</span>
+            <span class="toggle-hide">Hide Filter</span>
+            <i class="bi bi-funnel"></i>
+        </button>
+    </section>
+
+    <section class="shop-catalog-layout @(filtersOpenByDefault ? "filters-open" : string.Empty)" id="shopCatalogLayout">
+        <aside class="shop-filter-panel" id="shopFilterPanel">
+            <div class="shop-filter-group">
+                <h2>Product Type</h2>
+                @foreach (var category in categories)
+                {
+                    <label class="shop-filter-option">
+                        <input type="checkbox" />
+                        <span>@category</span>
+                    </label>
+                }
+            </div>
+
+            <div class="shop-filter-group">
+                <h2>Gender</h2>
+                @foreach (var gender in genders)
+                {
+                    <label class="shop-filter-option">
+                        <input type="checkbox" />
+                        <span>@gender</span>
+                    </label>
+                }
+            </div>
+
+            <div class="shop-filter-group">
+                <h2>Brand</h2>
+                @foreach (var brand in brands)
+                {
+                    <label class="shop-filter-option">
+                        <input type="checkbox" />
+                        <span>@brand</span>
+                    </label>
+                }
+            </div>
+
+            <div class="shop-filter-group">
+                <h2>Price</h2>
+                <div class="shop-price-fields">
+                    <input type="text" value="0,XXX" aria-label="Minimum price" />
+                    <input type="text" value="X,XXX" aria-label="Maximum price" />
+                </div>
+            </div>
+
+            <div class="shop-filter-group">
+                <h2>Type</h2>
+                @foreach (var type in pageTypes)
+                {
+                    <label class="shop-filter-option">
+                        <input type="checkbox" />
+                        <span>@type</span>
+                    </label>
+                }
+            </div>
+
+            <div class="shop-filter-group">
+                <h2>Size</h2>
+                <div class="shop-size-grid">
+                    @foreach (var size in sizeOptions)
+                    {
+                        <button type="button" class="shop-size-chip">@size</button>
+                    }
+                </div>
+                <button type="button" class="shop-filter-more">+ Showmore</button>
+            </div>
+        </aside>
+
+        <div class="shop-results-zone">
+            @if (!string.IsNullOrWhiteSpace(Model.SearchQuery))
+            {
+                <div class="shop-results-meta">Search query: @Model.SearchQuery</div>
+            }
+
+            @if (Model.Products.Count == 0)
+            {
+                <section class="shop-empty-state shop-empty-state-inline">
+                    <h2>@Model.EmptyTitle</h2>
+                    <p>@Model.EmptyDescription</p>
+                    <a asp-controller="Home" asp-action="Index" class="shop-primary-link">Back to Home</a>
+                </section>
+            }
+            else
+            {
+                <section class="shop-product-grid">
+                    @foreach (var product in Model.Products)
+                    {
+                        var hasSale = product.SalePrice.HasValue && product.SalePrice.Value > 0 && product.SalePrice.Value < product.RegularPrice;
+                        var currentPrice = hasSale ? product.SalePrice!.Value : product.RegularPrice;
+
+                        <article class="shop-product-card">
+                            <a asp-controller="Products" asp-action="Product" asp-route-id="@product.ProductId" class="shop-card-media">
+                                <img src="@product.ImageUrl" alt="@product.Name" />
+                            </a>
+
+                            <div class="shop-card-body">
+                                <p class="shop-card-kicker">@Model.Title</p>
+                                <h2 class="shop-card-title">
+                                    <a asp-controller="Products" asp-action="Product" asp-route-id="@product.ProductId">@product.Name</a>
+                                </h2>
+                                <p class="shop-card-category">@product.Gender @product.CategoryName</p>
+                                <div class="shop-price-block">
+                                    <span class="shop-price-current">$ @currentPrice.ToString("N0")</span>
+                                    @if (hasSale)
+                                    {
+                                        <span class="shop-price-old">$ @product.RegularPrice.ToString("N0")</span>
+                                    }
+                                </div>
+                            </div>
+                        </article>
+                    }
+                </section>
+            }
+        </div>
+    </section>
+</div>
+
+<script>
+    (function () {
+        const toggle = document.getElementById('shopFilterToggle');
+        const layout = document.getElementById('shopCatalogLayout');
+
+        if (!toggle || !layout) {
+            return;
+        }
+
+        toggle.addEventListener('click', function () {
+            const isOpen = layout.classList.toggle('filters-open');
+            toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+            toggle.classList.toggle('filter-open', isOpen);
+        });
+    })();
+</script>

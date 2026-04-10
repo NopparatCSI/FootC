@@ -13,6 +13,11 @@
     @RenderSection("Styles", required: false)
 </head>
 <body>
+    @{
+        var currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty;
+        var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
+        var searchQuery = ViewContext.HttpContext.Request.Query["q"].ToString();
+    }
     <header class="shop-header">
         <div class="promo-bar">
             <div class="promo-inner">
@@ -26,26 +31,26 @@
         </div>
         <div class="nav-bar">
             <div class="nav-inner">
-                <a class="brand" href="/">LOGO</a>
+                <a class="brand" asp-controller="Home" asp-action="Index">LOGO</a>
                 <nav class="nav-links">
-                    <a href="#">New Arrivals</a>
-                    <a href="#">Running Shoes</a>
-                    <a href="#">Training Shoes</a>
-                    <a href="#">Running Shoes</a>
-                    <a href="#">MEN</a>
-                    <a href="#">WOMEN</a>
+                    <a class="@((currentController == "Shop" && currentAction == "NewArrivals") ? "active" : string.Empty)" asp-controller="Shop" asp-action="NewArrivals">New Arrivals</a>
+                    <a class="@((currentController == "Shop" && currentAction == "RunningShoes") ? "active" : string.Empty)" asp-controller="Shop" asp-action="RunningShoes">Running Shoes</a>
+                    <a class="@((currentController == "Shop" && currentAction == "TrainingShoes") ? "active" : string.Empty)" asp-controller="Shop" asp-action="TrainingShoes">Training Shoes</a>
+                    <a class="@((currentController == "Shop" && currentAction == "Sales") ? "active" : string.Empty)" asp-controller="Shop" asp-action="Sales">Sales</a>
+                    <a class="@((currentController == "Shop" && currentAction == "Men") ? "active" : string.Empty)" asp-controller="Shop" asp-action="Men">Men</a>
+                    <a class="@((currentController == "Shop" && currentAction == "Women") ? "active" : string.Empty)" asp-controller="Shop" asp-action="Women">Women</a>
                 </nav>
                 <div class="nav-actions">
-                    <form class="nav-search" role="search">
+                    <form class="nav-search" role="search" asp-controller="Shop" asp-action="Search" method="get">
                         <i class="bi bi-search" aria-hidden="true"></i>
-                        <input type="search" placeholder="Search" aria-label="Search" />
+                        <input type="search" name="q" value="@searchQuery" placeholder="Search" aria-label="Search" />
                     </form>
-                    <button class="icon-btn" aria-label="Favorites">
+                    <a class="icon-btn" asp-controller="Shop" asp-action="Wishlist" aria-label="Favorites">
                         <i class="bi bi-heart" aria-hidden="true"></i>
-                    </button>
-                    <button class="icon-btn" aria-label="Cart">
+                    </a>
+                    <a class="icon-btn" asp-controller="Shop" asp-action="Cart" aria-label="Cart">
                         <i class="bi bi-bag" aria-hidden="true"></i>
-                    </button>
+                    </a>
                 </div>
             </div>
         </div>
@@ -67,10 +72,10 @@
                 </div>
                 <div class="footer-col">
                     <h4>PRODUCTS</h4>
-                    <a href="#">Running Shoes</a>
-                    <a href="#">Training Shoes</a>
-                    <a href="#">New Arrivals</a>
-                    <a href="#">Sales</a>
+                    <a asp-controller="Shop" asp-action="RunningShoes">Running Shoes</a>
+                    <a asp-controller="Shop" asp-action="TrainingShoes">Training Shoes</a>
+                    <a asp-controller="Shop" asp-action="NewArrivals">New Arrivals</a>
+                    <a asp-controller="Shop" asp-action="Sales">Sales</a>
                 </div>
                 <div class="footer-col">
                     <h4>SERVICE</h4>

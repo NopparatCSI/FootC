@@ -105,9 +105,10 @@
 /* ---- Quick Stats ---- */
 .stats-grid {
     display: grid;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     gap: 12px;
     margin-bottom: 16px;
+    align-items: stretch;
 }
 
 .stat-card {
@@ -115,9 +116,22 @@
     align-items: center;
     gap: 12px;
     padding: 12px;
+    min-height: 76px;
     border-radius: 12px;
     border: 1px solid #dbe4ee;
     background: #ffffff;
+}
+
+@media (min-width: 1400px) {
+    .stats-grid {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 1200px) {
+    .stats-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
 }
 
 .stat-icon {

@@ -1,0 +1,364 @@
+
+.shop-main > .shop-page-shell {
+  width: auto;
+  max-width: none;
+  margin: 0;
+  min-height: 70vh;
+  padding: 2.1rem 2rem 3rem;
+  background: #173d2a;
+  color: #f3f0e9;
+}
+
+.shop-page-shell {
+  font-family: "Space Mono", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.shop-page-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1.5rem;
+  margin: 0 auto 1.9rem;
+  max-width: 1400px;
+}
+
+.shop-page-title {
+  margin: 0;
+  font-size: clamp(2rem, 3vw, 2.4rem);
+  line-height: 1.05;
+  color: #f3f0e9;
+}
+
+.shop-page-description {
+  margin: 0.55rem 0 0;
+  max-width: 620px;
+  color: rgba(243, 240, 233, 0.68);
+  font-size: 0.82rem;
+  line-height: 1.7;
+}
+
+.shop-filter-toggle,
+.shop-primary-link,
+.shop-card-link,
+.shop-size-chip,
+.shop-filter-more {
+  font: inherit;
+}
+
+.shop-filter-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #f3f0e9;
+  font-size: 0.98rem;
+}
+
+.shop-filter-toggle .toggle-hide {
+  display: none;
+}
+
+.shop-filter-toggle.filter-open .toggle-show {
+  display: none;
+}
+
+.shop-filter-toggle.filter-open .toggle-hide {
+  display: inline;
+}
+
+.shop-catalog-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.shop-catalog-layout.filters-open {
+  grid-template-columns: 220px minmax(0, 1fr);
+  align-items: start;
+}
+
+.shop-catalog-layout.filters-open .shop-filter-panel {
+  display: block;
+}
+
+.shop-catalog-layout.filters-open ~ script + .shop-filter-toggle {
+  display: none;
+}
+
+.shop-filter-panel {
+  display: none;
+  position: sticky;
+  top: 110px;
+}
+
+.shop-filter-group + .shop-filter-group {
+  margin-top: 1.2rem;
+}
+
+.shop-filter-group h2 {
+  margin: 0 0 0.5rem;
+  color: #f3f0e9;
+  font-size: 1.08rem;
+  font-weight: 700;
+}
+
+.shop-filter-option {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.15rem;
+  color: rgba(243, 240, 233, 0.92);
+  font-size: 0.7rem;
+}
+
+.shop-filter-option input {
+  width: 11px;
+  height: 11px;
+  margin: 0;
+  accent-color: #000000;
+}
+
+.shop-price-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.4rem;
+}
+
+.shop-price-fields input {
+  width: 100%;
+  height: 22px;
+  padding: 0 0.45rem;
+  border: 1px solid #0d0e0f;
+  background: #0d0e0f;
+  color: #f3f0e9;
+  font-size: 0.62rem;
+  outline: none;
+}
+
+.shop-size-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.shop-size-chip {
+  min-width: 32px;
+  min-height: 18px;
+  padding: 0 0.35rem;
+  border: 1px solid #0d0e0f;
+  background: #0d0e0f;
+  color: #f3f0e9;
+  font-size: 0.6rem;
+}
+
+.shop-filter-more {
+  margin-top: 0.55rem;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: rgba(243, 240, 233, 0.74);
+  font-size: 0.7rem;
+}
+
+.shop-results-zone {
+  min-width: 0;
+}
+
+.shop-results-meta {
+  margin-bottom: 0.9rem;
+  color: rgba(243, 240, 233, 0.68);
+  font-size: 0.7rem;
+}
+
+.shop-product-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 2rem 1.15rem;
+}
+
+.shop-product-card {
+  display: grid;
+  gap: 0.65rem;
+  background: transparent;
+}
+
+.shop-card-media {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.03)),
+    radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.1), transparent 38%),
+    #d8ddd7;
+}
+
+.shop-card-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 0.5rem;
+}
+
+.shop-card-body {
+  display: grid;
+  gap: 0.12rem;
+  padding: 0 0.15rem;
+}
+
+.shop-card-kicker {
+  margin: 0;
+  color: #ff8a1f;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.shop-card-title {
+  margin: 0;
+  font-size: 0.98rem;
+  font-weight: 400;
+  line-height: 1.25;
+}
+
+.shop-card-title a,
+.shop-card-category,
+.shop-price-current,
+.shop-price-old {
+  color: #f3f0e9;
+}
+
+.shop-card-category {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.shop-price-block {
+  display: flex;
+  align-items: baseline;
+  gap: 0.45rem;
+  margin-top: 0.15rem;
+}
+
+.shop-price-current,
+.shop-price-old {
+  font-size: 0.9rem;
+  font-weight: 400;
+}
+
+.shop-price-old {
+  opacity: 0.5;
+  text-decoration: line-through;
+}
+
+.shop-card-link {
+  display: none;
+}
+
+.shop-empty-state,
+.shop-utility-panel {
+  margin-top: 1.75rem;
+  padding: 2rem;
+  border-radius: 24px;
+  border: 1px solid rgba(23, 61, 42, 0.12);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.94) 0%, rgba(244, 240, 234, 0.88) 100%);
+}
+
+.shop-empty-state-inline {
+  margin-top: 0;
+  min-height: 280px;
+}
+
+.shop-empty-state h2,
+.shop-utility-panel h2,
+.shop-recommendations-head h2 {
+  margin: 0;
+  color: #102218;
+}
+
+.shop-empty-state p,
+.shop-utility-panel p {
+  margin: 0.8rem 0 0;
+  color: #55685c;
+  line-height: 1.7;
+}
+
+.shop-empty-state .shop-primary-link {
+  margin-top: 1.25rem;
+}
+
+.shop-utility-shell {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.shop-utility-hero {
+  align-items: center;
+}
+
+.shop-recommendations {
+  display: grid;
+  gap: 1rem;
+}
+
+.shop-recommendations-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+}
+
+.shop-recommendations-head a {
+  color: #173d2a;
+  font-size: 0.84rem;
+}
+
+.shop-product-grid-compact {
+  padding-top: 0;
+}
+
+.shop-product-card-compact .shop-card-media {
+  aspect-ratio: 16 / 10;
+}
+
+@media (max-width: 900px) {
+  .shop-page-hero {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .shop-catalog-layout.filters-open {
+    grid-template-columns: 1fr;
+  }
+
+  .shop-filter-panel {
+    position: static;
+  }
+
+  .shop-filter-toggle {
+    font-size: 0.9rem;
+  }
+
+  .shop-product-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .shop-main > .shop-page-shell {
+    padding: 1.4rem 1rem 2.2rem;
+  }
+
+  .shop-product-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .shop-empty-state,
+  .shop-utility-panel {
+    padding: 1.35rem;
+  }
+}

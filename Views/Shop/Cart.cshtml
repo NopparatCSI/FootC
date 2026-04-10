@@ -1,0 +1,12 @@
+@model WebApp1.ViewModels.ShopUtilityPageViewModel
+
+@{
+    Layout = "_CustomerNavbar";
+    ViewData["Title"] = "Cart";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/ShopPages.css" asp-append-version="true" />
+}
+
+<partial name="_ShopUtilityPage" model="Model" />

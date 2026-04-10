@@ -1,0 +1,12 @@
+@model WebApp1.ViewModels.ShopListingPageViewModel
+
+@{
+    Layout = "_CustomerNavbar";
+    ViewData["Title"] = "Men";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/ShopPages.css" asp-append-version="true" />
+}
+
+<partial name="_ShopListingPage" model="Model" />

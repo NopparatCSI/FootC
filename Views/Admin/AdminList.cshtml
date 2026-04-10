@@ -4,11 +4,39 @@
     ViewData["Title"] = "Admin List";
     var currentAdminId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? string.Empty;
     var totalAdmins = Model.Admins.Count;
-    var superAdminCount = Model.Admins.Count(a => string.Equals(a.RoleName, "Super Admin", StringComparison.OrdinalIgnoreCase));
-    var adminCount = Model.Admins.Count(a => string.Equals(a.RoleName, "Admin", StringComparison.OrdinalIgnoreCase));
-    var managerCount = Model.Admins.Count(a =>
-        string.Equals(a.RoleName, "Catalog Manager", StringComparison.OrdinalIgnoreCase)
-        || string.Equals(a.RoleName, "Order Manager", StringComparison.OrdinalIgnoreCase));
+
+    string GetRoleLabel(string roleName)
+    {
+        return roleName switch
+        {
+            WebApp1.Security.AdminRoles.SuperAdmin => "Super Admin",
+            WebApp1.Security.AdminRoles.CatalogManager => "Catalog Manager",
+            WebApp1.Security.AdminRoles.OrderManager => "Order Manager",
+            _ => "Support"
+        };
+    }
+
+    string GetRoleIcon(string roleName)
+    {
+        return roleName switch
+        {
+            WebApp1.Security.AdminRoles.SuperAdmin => "bi-shield-lock-fill",
+            WebApp1.Security.AdminRoles.CatalogManager => "bi-tags-fill",
+            WebApp1.Security.AdminRoles.OrderManager => "bi-bag-check-fill",
+            _ => "bi-headset"
+        };
+    }
+
+    var roleSummaries = Model.RoleOptions
+        .Select(role => role.Value)
+        .Where(role => !string.IsNullOrWhiteSpace(role))
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .Select(role => new
+        {
+            RoleName = role!,
+            Count = Model.Admins.Count(admin => string.Equals(admin.RoleName, role, StringComparison.OrdinalIgnoreCase))
+        })
+        .ToList();
 }
 
 <link rel="stylesheet" href="~/css/AdminListStyle.css" asp-append-version="true" />
@@ -56,27 +84,16 @@
                 <p class="stat-value">@totalAdmins</p>
             </div>
         </article>
-        <article class="stat-card">
-            <div class="stat-icon"><i class="bi bi-shield-lock-fill"></i></div>
-            <div>
-                <p class="stat-label">Super Admin</p>
-                <p class="stat-value">@superAdminCount</p>
-            </div>
-        </article>
-        <article class="stat-card">
-            <div class="stat-icon"><i class="bi bi-person-check-fill"></i></div>
-            <div>
-                <p class="stat-label">Admin</p>
-                <p class="stat-value">@adminCount</p>
-            </div>
-        </article>
-        <article class="stat-card">
-            <div class="stat-icon"><i class="bi bi-diagram-3-fill"></i></div>
-            <div>
-                <p class="stat-label">Managers</p>
-                <p class="stat-value">@managerCount</p>
-            </div>
-        </article>
+        @foreach (var summary in roleSummaries)
+        {
+            <article class="stat-card">
+                <div class="stat-icon"><i class="bi @GetRoleIcon(summary.RoleName)"></i></div>
+                <div>
+                    <p class="stat-label">@GetRoleLabel(summary.RoleName)</p>
+                    <p class="stat-value">@summary.Count</p>
+                </div>
+            </article>
+        }
     </div>
 
     <!-- Filter Bar -->

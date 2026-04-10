@@ -111,7 +111,8 @@
   font-weight: 600;
 }
 
-.category-tile button {
+.category-tile button,
+.category-tile a {
   border: none;
   border-radius: 999px;
   background: #efefef;
@@ -120,6 +121,9 @@
   font-size: 1.8rem;
   font-weight: 700;
   line-height: 1.25;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 @media (max-width: 991px) {
