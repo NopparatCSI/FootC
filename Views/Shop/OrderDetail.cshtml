@@ -1,0 +1,115 @@
+@model WebApp1.ViewModels.OrderStatusViewModel
+
+@{
+    Layout = "_CustomerNavbar";
+    ViewData["Title"] = "Order Detail";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/ShopPages.css" asp-append-version="true" />
+}
+
+<div class="shop-page-shell shop-checkout-shell">
+    <section class="shop-page-hero shop-utility-hero">
+        <div>
+            <p class="shop-page-eyebrow">Order Detail</p>
+            <h1 class="shop-page-title">@Model.OrderNumber</h1>
+            <p class="shop-page-description">Placed on @Model.OrderDate.ToString("dd MMM yyyy, HH:mm") · Payment @Model.PaymentStatus</p>
+        </div>
+        <a asp-controller="Shop" asp-action="OrderHistory" class="shop-primary-link utility-hero-cta">Back to History</a>
+    </section>
+
+    <div class="order-detail-layout">
+        <section class="order-detail-main">
+            <section class="order-detail-panel">
+                <div class="order-history-head">
+                    <div>
+                        <p class="order-history-label">Current Status</p>
+                        <h2>@Model.Status</h2>
+                    </div>
+                    <span class="order-payment-badge order-payment-badge--@Model.PaymentStatus.ToLowerInvariant()">@Model.PaymentMethod</span>
+                </div>
+
+                <div class="order-timeline">
+                    @foreach (var step in Model.Timeline)
+                    {
+                        var cssClass = step.IsCancelled
+                            ? "order-timeline-step is-cancelled"
+                            : step.IsCurrent
+                                ? "order-timeline-step is-current"
+                                : step.IsCompleted
+                                    ? "order-timeline-step is-completed"
+                                    : "order-timeline-step";
+
+                        <article class="@cssClass">
+                            <div class="order-timeline-icon"><i class="bi @step.Icon"></i></div>
+                            <div>
+                                <h3>@step.StepName</h3>
+                                <p>@(step.CompletedAt?.ToString("dd MMM yyyy, HH:mm") ?? "Waiting")</p>
+                            </div>
+                        </article>
+                    }
+                </div>
+            </section>
+
+            <section class="order-detail-panel">
+                <h2 class="checkout-title">Items</h2>
+                <div class="order-detail-items">
+                    @foreach (var item in Model.Items)
+                    {
+                        <article class="order-detail-item">
+                            <div class="order-detail-item-media">
+                                <img src="@(string.IsNullOrWhiteSpace(item.ImageUrl) ? "/images/Running-Shoe-2.jpeg" : item.ImageUrl)" alt="@item.ProductName" />
+                            </div>
+                            <div class="order-detail-item-body">
+                                <h3>@item.ProductName</h3>
+                                <p>SKU: @item.Sku</p>
+                                <p>Color: @item.Color</p>
+                                <p>Size: @item.Size</p>
+                                <p>Qty: @item.Quantity</p>
+                            </div>
+                            <div class="order-detail-item-price">฿@item.LineTotal.ToString("N2")</div>
+                        </article>
+                    }
+                </div>
+            </section>
+        </section>
+
+        <aside class="order-detail-side">
+            <section class="order-detail-panel order-detail-summary">
+                <h2 class="checkout-title">Customer & Shipping</h2>
+                <div class="order-detail-meta-block">
+                    <p><strong>@Model.CustomerName</strong></p>
+                    <p>@Model.CustomerEmail</p>
+                    <p>@Model.CustomerPhone</p>
+                </div>
+                <div class="order-detail-meta-block">
+                    <p><strong>Shipping Address</strong></p>
+                    <p>@Model.ShippingAddress</p>
+                </div>
+                <div class="order-detail-meta-block">
+                    <p><strong>Delivery Method</strong></p>
+                    <p>@Model.ShippingMethod</p>
+                    <p><strong>Tracking</strong> @Model.TrackingNumber</p>
+                </div>
+                <hr class="order-detail-divider" />
+                <div class="checkout-summary-row">
+                    <span>Subtotal</span>
+                    <strong>฿@Model.Subtotal.ToString("N2")</strong>
+                </div>
+                <div class="checkout-summary-row checkout-summary-row--muted">
+                    <span>Shipping</span>
+                    <span>฿@Model.ShippingFee.ToString("N2")</span>
+                </div>
+                <div class="checkout-summary-row checkout-summary-row--muted">
+                    <span>Discount</span>
+                    <span>฿@Model.Discount.ToString("N2")</span>
+                </div>
+                <div class="checkout-summary-row order-detail-grand-total">
+                    <span>Grand Total</span>
+                    <strong>฿@Model.GrandTotal.ToString("N2")</strong>
+                </div>
+            </section>
+        </aside>
+    </div>
+</div>

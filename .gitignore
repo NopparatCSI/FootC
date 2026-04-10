@@ -2,6 +2,8 @@
 # Build results
 bin/
 obj/
+temp-build-output/
+TestResults/
 
 # User-specific files
 *.user
@@ -11,6 +13,7 @@ obj/
 
 # Visual Studio Code
 .vscode/
+.vs/
 
 # OS generated files
 .DS_Store
@@ -33,6 +36,9 @@ packages/
 # Publish outputs
 publish/
 
+# Generated docs
+FolderMarkdown/
+
 # Database
 *.mdf
 *.ldf
@@ -40,3 +46,7 @@ publish/
 # Others
 *.db
 *.sqlite
+
+# App secrets / environment-specific config
+appsettings.json
+appsettings.Development.json

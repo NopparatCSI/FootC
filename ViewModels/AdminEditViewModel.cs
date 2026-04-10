@@ -30,7 +30,7 @@ public class AdminEditViewModel
 
     [Required]
     [Display(Name = "Role")]
-    public string RoleName { get; set; } = AdminRoles.Support;
+    public string RoleName { get; set; } = AdminRoles.Admin;
 
     [DataType(DataType.Password)]
     [StringLength(80, MinimumLength = 6)]

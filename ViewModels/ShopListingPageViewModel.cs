@@ -14,5 +14,13 @@ public class ShopListingPageViewModel
 
     public string? SearchQuery { get; set; }
 
+    public List<string> AvailableCategories { get; set; } = new();
+
+    public List<string> AvailableGenders { get; set; } = new();
+
+    public List<string> AvailableBrands { get; set; } = new();
+
+    public List<string> AvailableSizes { get; set; } = new();
+
     public List<ShopProductCardViewModel> Products { get; set; } = new();
 }

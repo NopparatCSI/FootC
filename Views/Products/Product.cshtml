@@ -26,6 +26,7 @@
 
     var euSizes = new[] { "38", "38.5", "39", "40", "40.5", "41", "42", "42.5", "43", "44", "44.5", "45" };
     var usSizes = new[] { "6", "6.5", "7", "7.5", "8", "8.5", "9", "9.5", "10", "10.5", "11", "11.5" };
+    var customerLoginUrl = Url.Action("Login", "Account", new { returnUrl = Context.Request.Path + Context.Request.QueryString }) ?? "/Account/Login";
 }
 
 @section Styles {
@@ -36,9 +37,25 @@
 
     <!-- Breadcrumb -->
     <ul class="cp-breadcrumb">
-        <li><a href="/">Home</a></li>
-        <li><a href="#">@Model.Category</a></li>
-        <li><a href="#">@Model.Gender</a></li>
+        <li><a asp-controller="Home" asp-action="Index">Home</a></li>
+        <li><a asp-controller="Shop" asp-action="NewArrivals">Shop</a></li>
+        @if (!string.IsNullOrWhiteSpace(Model.Gender))
+        {
+            <li>
+                @if (string.Equals(Model.Gender, "Men", StringComparison.OrdinalIgnoreCase))
+                {
+                    <a asp-controller="Shop" asp-action="Men">@Model.Gender</a>
+                }
+                else if (string.Equals(Model.Gender, "Women", StringComparison.OrdinalIgnoreCase))
+                {
+                    <a asp-controller="Shop" asp-action="Women">@Model.Gender</a>
+                }
+                else
+                {
+                    <span>@Model.Gender</span>
+                }
+            </li>
+        }
         <li>@Model.Name</li>
     </ul>
 
@@ -56,7 +73,9 @@
                 }
             </div>
             <div class="cp-main-img-wrap">
+                <button type="button" class="cp-img-arrow cp-img-prev" id="imgPrev" aria-label="Previous image">&#8249;</button>
                 <img class="cp-main-img" id="mainImage" src="@allImages[0]" alt="@Model.Name" />
+                <button type="button" class="cp-img-arrow cp-img-next" id="imgNext" aria-label="Next image">&#8250;</button>
                 @if (hasSale && discount.HasValue && discount.Value > 0)
                 {
                     <span class="cp-badge-sale">-@discount.Value.ToString("0.##")%</span>
@@ -66,9 +85,9 @@
 
         <!-- RIGHT: info -->
         <div class="cp-info">
-            <p class="cp-category-label">@Model.Brand &nbsp;·&nbsp; @Model.Category</p>
+            <p class="cp-eyebrow">@Model.Brand</p>
+            <p class="cp-category-label">@Model.Category</p>
             <h1 class="cp-product-name">@Model.Name</h1>
-
             <p class="cp-gender-label">@Model.Gender's Shoes</p>
 
             <div class="cp-price-block">
@@ -105,7 +124,7 @@
             <div class="cp-size-section">
                 <div class="cp-size-header">
                     <div class="cp-label">Select Size</div>
-                    <span class="cp-size-guide">Size Guide</span>
+                    <button type="button" class="cp-size-guide" id="sizeGuideBtn" aria-haspopup="dialog">Size Guide</button>
                 </div>
 
                 <div class="cp-size-type-tabs">
@@ -131,9 +150,10 @@
 
             <!-- CTA -->
             <div class="cp-actions">
-                <button type="button" class="cp-btn-bag">Add to Bag</button>
-                <button type="button" class="cp-btn-fav">
-                    <i class="bi bi-heart"></i> Favorite
+                <button type="button" class="cp-btn-bag" id="addToBagBtn">Add to Bag</button>
+                <button type="button" class="cp-btn-fav" id="favBtn" data-product-id="@Model.Id">
+                    <i class="bi bi-heart" id="favIcon"></i>
+                    <span id="favText">Favorite</span>
                 </button>
             </div>
 
@@ -157,7 +177,7 @@
         {
             <div class="cp-detail-card">
                 <h4 class="cp-detail-title">Description</h4>
-                <p>@Model.FullDescription</p>
+                <div class="cp-detail-prose">@Html.Raw(Model.FullDescription)</div>
             </div>
         }
 
@@ -171,29 +191,252 @@
 
         @if (!string.IsNullOrWhiteSpace(Model.TechnicalDetails))
         {
+            var techEntries = (Model.TechnicalDetails ?? "")
+                .Split(new[] { '|', ';' }, StringSplitOptions.RemoveEmptyEntries)
+                .Select(entry => entry.Trim())
+                .Where(entry => !string.IsNullOrWhiteSpace(entry))
+                .ToList();
+
             <div class="cp-detail-card">
                 <h4 class="cp-detail-title">Technical Details</h4>
-                <div class="cp-specs">
-                    @foreach (var item in (Model.TechnicalDetails ?? "").Split(';', StringSplitOptions.RemoveEmptyEntries))
+                <dl class="cp-spec-grid">
+                    @foreach (var entry in techEntries)
                     {
-                        <span class="cp-spec-chip">@item.Trim()</span>
+                        var colonIndex = entry.IndexOf(':');
+                        if (colonIndex > 0)
+                        {
+                            var key = entry.Substring(0, colonIndex).Trim();
+                            var val = entry.Substring(colonIndex + 1).Trim();
+                            <div class="cp-spec-row">
+                                <dt>@key</dt>
+                                <dd>@val</dd>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="cp-spec-row cp-spec-row--full">
+                                <dd>@entry</dd>
+                            </div>
+                        }
                     }
-                </div>
+                </dl>
             </div>
         }
 
     </div>
 </div>
 
+<!-- ==================== CART SUCCESS MODAL ==================== -->
+<div class="cp-cart-backdrop" id="cartAddedModal" role="dialog" aria-modal="true" aria-labelledby="cartAddedTitle" hidden>
+    <div class="cp-cart-dialog">
+        <h2 class="cp-cart-title" id="cartAddedTitle">Product added successfully</h2>
+        <p class="cp-cart-message">The product has been added to your bag.</p>
+        <div class="cp-cart-actions">
+            <a class="cp-cart-go" href="@Url.Action("Cart", "Shop")">Go to cart</a>
+            <button type="button" class="cp-cart-continue" id="cartContinueBtn">Continue shopping</button>
+        </div>
+    </div>
+</div>
+
+<!-- ==================== SIZE GUIDE MODAL ==================== -->
+<div class="sg-backdrop" id="sizeGuideModal" role="dialog" aria-modal="true" aria-labelledby="sizeGuideTitle" hidden>
+    <div class="sg-dialog">
+        <div class="sg-header">
+            <h2 class="sg-title" id="sizeGuideTitle">Size Guide</h2>
+            <button type="button" class="sg-close" id="sizeGuideClose" aria-label="Close size guide">
+                <i class="bi bi-x-lg"></i>
+            </button>
+        </div>
+
+        <div class="sg-body">
+            <p class="sg-note">วัดความยาวเท้าจากส้นถึงปลายนิ้วที่ยาวที่สุด แล้วเลือกไซซ์ที่ตรงกับ CM ด้านล่าง</p>
+
+            <div class="sg-tabs">
+                <button type="button" class="sg-tab active" data-table="men">Men</button>
+                <button type="button" class="sg-tab" data-table="women">Women</button>
+            </div>
+
+            <div class="sg-table-wrap" id="sgTableMen">
+                <table class="sg-table">
+                    <thead>
+                        <tr>
+                            <th>US</th>
+                            <th>EU</th>
+                            <th>UK</th>
+                            <th>CM</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>6</td><td>38.5</td><td>5.5</td><td>24.0</td></tr>
+                        <tr><td>6.5</td><td>39</td><td>6</td><td>24.5</td></tr>
+                        <tr><td>7</td><td>40</td><td>6.5</td><td>25.0</td></tr>
+                        <tr><td>7.5</td><td>40.5</td><td>7</td><td>25.5</td></tr>
+                        <tr><td>8</td><td>41</td><td>7.5</td><td>26.0</td></tr>
+                        <tr><td>8.5</td><td>42</td><td>8</td><td>26.5</td></tr>
+                        <tr><td>9</td><td>42.5</td><td>8.5</td><td>27.0</td></tr>
+                        <tr><td>9.5</td><td>43</td><td>9</td><td>27.5</td></tr>
+                        <tr><td>10</td><td>44</td><td>9.5</td><td>28.0</td></tr>
+                        <tr><td>10.5</td><td>44.5</td><td>10</td><td>28.5</td></tr>
+                        <tr><td>11</td><td>45</td><td>10.5</td><td>29.0</td></tr>
+                        <tr><td>11.5</td><td>45.5</td><td>11</td><td>29.5</td></tr>
+                        <tr><td>12</td><td>46</td><td>11.5</td><td>30.0</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="sg-table-wrap" id="sgTableWomen" hidden>
+                <table class="sg-table">
+                    <thead>
+                        <tr>
+                            <th>US</th>
+                            <th>EU</th>
+                            <th>UK</th>
+                            <th>CM</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr><td>5</td><td>35.5</td><td>3</td><td>22.0</td></tr>
+                        <tr><td>5.5</td><td>36</td><td>3.5</td><td>22.5</td></tr>
+                        <tr><td>6</td><td>36.5</td><td>4</td><td>23.0</td></tr>
+                        <tr><td>6.5</td><td>37</td><td>4.5</td><td>23.5</td></tr>
+                        <tr><td>7</td><td>37.5</td><td>5</td><td>24.0</td></tr>
+                        <tr><td>7.5</td><td>38</td><td>5.5</td><td>24.5</td></tr>
+                        <tr><td>8</td><td>38.5</td><td>6</td><td>25.0</td></tr>
+                        <tr><td>8.5</td><td>39</td><td>6.5</td><td>25.5</td></tr>
+                        <tr><td>9</td><td>40</td><td>7</td><td>26.0</td></tr>
+                        <tr><td>9.5</td><td>40.5</td><td>7.5</td><td>26.5</td></tr>
+                        <tr><td>10</td><td>41</td><td>8</td><td>27.0</td></tr>
+                        <tr><td>10.5</td><td>42</td><td>8.5</td><td>27.5</td></tr>
+                        <tr><td>11</td><td>42.5</td><td>9</td><td>28.0</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="sg-tip">
+                <i class="bi bi-lightbulb"></i>
+                <span>ถ้าวัดได้อยู่ระหว่างไซซ์ แนะนำให้เลือกไซซ์ที่ใหญ่กว่า</span>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
 <script>
 (function () {
-    // ---------- thumbnail → main image ----------
+    // ---------- size guide modal ----------
+    const modal = document.getElementById('sizeGuideModal');
+    const openBtn = document.getElementById('sizeGuideBtn');
+    const closeBtn = document.getElementById('sizeGuideClose');
+    const sgTabs = Array.from(document.querySelectorAll('.sg-tab'));
+
+    if (modal && openBtn) {
+        openBtn.addEventListener('click', function () {
+            modal.hidden = false;
+            document.body.style.overflow = 'hidden';
+            closeBtn?.focus();
+        });
+
+        const closeModal = function () {
+            modal.hidden = true;
+            document.body.style.overflow = '';
+            openBtn.focus();
+        };
+
+        closeBtn?.addEventListener('click', closeModal);
+
+        modal.addEventListener('click', function (e) {
+            if (e.target === modal) {
+                closeModal();
+            }
+        });
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && !modal.hidden) {
+                closeModal();
+            }
+        });
+
+        sgTabs.forEach(function (tab) {
+            tab.addEventListener('click', function () {
+                sgTabs.forEach(function (t) { t.classList.remove('active'); });
+                tab.classList.add('active');
+
+                const target = tab.dataset.table;
+                document.getElementById('sgTableMen').hidden = (target !== 'men');
+                document.getElementById('sgTableWomen').hidden = (target !== 'women');
+            });
+        });
+    }
+
+    // ---------- image gallery nav ----------
+    const allImages = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(allImages));
+    let currentImageIndex = 0;
+
+    function goToImage(index) {
+        const thumbs = Array.from(document.querySelectorAll('.cp-thumb'));
+        const total = allImages.length;
+        currentImageIndex = ((index % total) + total) % total;
+        document.getElementById('mainImage').src = allImages[currentImageIndex];
+        thumbs.forEach((t, i) => t.classList.toggle('active', i === currentImageIndex));
+    }
+
+    document.getElementById('imgPrev')?.addEventListener('click', function () {
+        goToImage(currentImageIndex - 1);
+    });
+    document.getElementById('imgNext')?.addEventListener('click', function () {
+        goToImage(currentImageIndex + 1);
+    });
+
     window.setMainImage = function (thumb) {
+        const thumbs = Array.from(document.querySelectorAll('.cp-thumb'));
+        currentImageIndex = thumbs.indexOf(thumb);
         document.getElementById('mainImage').src = thumb.src;
-        document.querySelectorAll('.cp-thumb').forEach(t => t.classList.remove('active'));
+        thumbs.forEach(t => t.classList.remove('active'));
         thumb.classList.add('active');
     };
+
+    // ---------- favorite ----------
+    const favBtn = document.getElementById('favBtn');
+    const favIcon = document.getElementById('favIcon');
+    const favText = document.getElementById('favText');
+    const productId = favBtn ? favBtn.dataset.productId : null;
+    const FAV_KEY = 'cp_favorites';
+    const CART_KEY = 'cp_cart';
+    const isCustomerLoggedIn = @(Model.IsCustomerLoggedIn ? "true" : "false");
+    const customerLoginUrl = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(customerLoginUrl));
+
+    function getFavs() {
+        try { return JSON.parse(localStorage.getItem(FAV_KEY) || '[]'); } catch { return []; }
+    }
+    function saveFavs(arr) {
+        localStorage.setItem(FAV_KEY, JSON.stringify(arr));
+    }
+    function applyFavState(isFav) {
+        if (!favBtn) return;
+        favBtn.classList.toggle('is-fav', isFav);
+        favIcon.className = isFav ? 'bi bi-heart-fill' : 'bi bi-heart';
+        favText.textContent = isFav ? 'Saved' : 'Favorite';
+    }
+
+    if (productId) {
+        applyFavState(getFavs().includes(productId));
+        favBtn.addEventListener('click', function () {
+            if (!isCustomerLoggedIn) {
+                window.location.href = customerLoginUrl;
+                return;
+            }
+
+            let favs = getFavs();
+            const isFav = favs.includes(productId);
+            if (isFav) {
+                favs = favs.filter(id => id !== productId);
+            } else {
+                favs.push(productId);
+            }
+            saveFavs(favs);
+            applyFavState(!isFav);
+        });
+    }
 
     // ---------- color swatch ----------
     window.pickColor = function (btn, name) {
@@ -215,6 +458,11 @@
         grid.innerHTML = sizes.map(s =>
             '<button type="button" class="cp-size-btn" onclick="pickSize(this)">' + s + '</button>'
         ).join('');
+
+        const first = grid.querySelector('.cp-size-btn');
+        if (first) {
+            first.classList.add('active');
+        }
     };
 
     // ---------- size pick ----------
@@ -231,6 +479,83 @@
         v = Math.max(1, v + d);
         el.value = v;
     };
+
+    // ---------- add to bag ----------
+    function getCart() {
+        try {
+            const parsed = JSON.parse(localStorage.getItem(CART_KEY) || '[]');
+            return Array.isArray(parsed) ? parsed : [];
+        } catch {
+            return [];
+        }
+    }
+
+    function saveCart(items) {
+        localStorage.setItem(CART_KEY, JSON.stringify(items));
+    }
+
+    const cartModal = document.getElementById('cartAddedModal');
+    const cartContinueBtn = document.getElementById('cartContinueBtn');
+
+    function openCartModal() {
+        if (!cartModal) return;
+        cartModal.hidden = false;
+        document.body.style.overflow = 'hidden';
+        cartContinueBtn?.focus();
+    }
+
+    function closeCartModal() {
+        if (!cartModal) return;
+        cartModal.hidden = true;
+        document.body.style.overflow = '';
+    }
+
+    cartContinueBtn?.addEventListener('click', closeCartModal);
+    cartModal?.addEventListener('click', function (e) {
+        if (e.target === cartModal) {
+            closeCartModal();
+        }
+    });
+
+    const addToBagBtn = document.getElementById('addToBagBtn');
+    addToBagBtn?.addEventListener('click', function () {
+        const qty = Math.max(1, parseInt(document.getElementById('qtyValue')?.value || '1', 10) || 1);
+        const selectedSize = document.querySelector('.cp-size-btn.active')?.textContent?.trim() || '';
+        const selectedSizeType = document.querySelector('.cp-size-type-tab.active')?.textContent?.trim() || 'EU';
+        const selectedColor = document.getElementById('selectedColor')?.textContent?.trim() || 'Default';
+        const currentPrice = @currentPrice.ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+        const keyBase = '@Model.Id' + '|' + selectedColor + '|' + selectedSize;
+        const cart = getCart();
+        const existing = cart.find(item => item.key === keyBase);
+
+        if (existing) {
+            existing.qty = (Number(existing.qty) || 1) + qty;
+        } else {
+            cart.push({
+                key: keyBase,
+                productId: @Model.Id,
+                name: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Name)),
+                brandName: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Brand)),
+                gender: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.Gender)),
+                imageUrl: @Html.Raw(System.Text.Json.JsonSerializer.Serialize(allImages[0])),
+                color: selectedColor,
+                size: selectedSize,
+                sizeType: selectedSizeType,
+                qty: qty,
+                unitPrice: Number(currentPrice)
+            });
+        }
+
+        saveCart(cart);
+        openCartModal();
+    });
+
+    // Default first size as selected for better UX.
+    const firstSize = document.querySelector('#sizeGrid .cp-size-btn');
+    if (firstSize) {
+        firstSize.classList.add('active');
+    }
 })();
 </script>
 }

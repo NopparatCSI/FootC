@@ -1,0 +1,40 @@
+@{
+    Layout = "_CustomerNavbar";
+    ViewData["Title"] = "Order Confirmed";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/ShopPages.css" asp-append-version="true" />
+}
+
+<div class="shop-page-shell shop-checkout-shell">
+    <section class="shop-page-hero shop-utility-hero">
+        <div>
+            <p class="shop-page-eyebrow">Order Complete</p>
+            <h1 class="shop-page-title">Thank you for your order</h1>
+            <p class="shop-page-description">Your order has been placed successfully and will be confirmed by our team.</p>
+        </div>
+        <a asp-controller="Shop" asp-action="NewArrivals" class="shop-primary-link utility-hero-cta">Continue Shopping</a>
+    </section>
+
+    <section class="shop-utility-panel checkout-success-panel">
+        <h2>Order @ViewBag.OrderNumber</h2>
+        <p>Placed on @(((DateTime)ViewBag.OrderDate).ToString("dd MMM yyyy HH:mm"))</p>
+        <p>Total amount: ฿@(((decimal)ViewBag.TotalAmount).ToString("N2"))</p>
+        <p>Payment: @ViewBag.PaymentMethod</p>
+
+        <div class="checkout-success-actions">
+            <a asp-controller="Shop" asp-action="NewArrivals" class="shop-primary-link">Shop More</a>
+            <a asp-controller="Shop" asp-action="Cart" class="shop-primary-link checkout-secondary-btn">Back to Cart</a>
+        </div>
+    </section>
+</div>
+
+@section Scripts {
+<script>
+(function () {
+    localStorage.removeItem('cp_cart');
+    localStorage.removeItem('cp_promo_preview');
+})();
+</script>
+}

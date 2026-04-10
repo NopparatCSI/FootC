@@ -1,0 +1,470 @@
+@model WebApp1.ViewModels.PromotionManagementViewModel
+@{
+    Layout = "_AdminLayout";
+    ViewData["Title"] = "Promotion Management";
+
+    string GetTypeLabel(string promotionType)
+    {
+        return promotionType switch
+        {
+            "Percent" => "Percent",
+            "FixedAmount" => "Fixed",
+            "FreeShipping" => "Shipping",
+            _ => promotionType
+        };
+    }
+
+    var selectedStatus = string.IsNullOrWhiteSpace(Model.SelectedStatus) ? string.Empty : Model.SelectedStatus;
+}
+
+<link rel="stylesheet" href="~/css/PromotionManagementStyle.css" asp-append-version="true" />
+
+<div class="promo-page">
+    @if (TempData["PromotionError"] is string errorMessage)
+    {
+        <div class="promo-alert promo-alert-error">
+            <i class="bi bi-exclamation-circle-fill"></i>
+            <span>@errorMessage</span>
+        </div>
+    }
+    @if (TempData["PromotionMessage"] is string successMessage)
+    {
+        <div class="promo-alert promo-alert-success">
+            <i class="bi bi-check-circle-fill"></i>
+            <span>@successMessage</span>
+        </div>
+    }
+
+    <div class="promo-hero">
+        <div>
+            <span class="hero-eyebrow">Catalog Marketing</span>
+            <h2 class="hero-title">Promotion Management</h2>
+            <p class="hero-subtitle">Create and manage active campaigns that can be applied during checkout.</p>
+        </div>
+    </div>
+
+    <div class="promo-stats">
+        <article class="stat-card">
+            <p class="stat-label">Total Promotions</p>
+            <p class="stat-value">@Model.TotalPromotions</p>
+        </article>
+        <article class="stat-card">
+            <p class="stat-label">Active Promotions</p>
+            <p class="stat-value">@Model.ActivePromotions</p>
+        </article>
+    </div>
+
+    <div class="promo-layout">
+        <section class="card list-card">
+            <div class="card-head row-head">
+                <h3>Promotion List</h3>
+                <form method="get" asp-action="PromotionManagement" asp-controller="Admin" class="status-filter">
+                    <select id="statusFilter" name="status" onchange="this.form.submit()">
+                        <option value="">All Status</option>
+                        <option value="Active">Active</option>
+                        <option value="Draft">Draft</option>
+                        <option value="Paused">Paused</option>
+                        <option value="Expired">Expired</option>
+                    </select>
+                </form>
+            </div>
+
+            <div class="table-wrap">
+                <table class="promo-table">
+                    <thead>
+                        <tr>
+                            <th>Code</th>
+                            <th>Name</th>
+                            <th>Type</th>
+                            <th>Value</th>
+                            <th>Status</th>
+                            <th>Period</th>
+                            <th>Priority</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (Model.Promotions.Count == 0)
+                        {
+                            <tr>
+                                <td colspan="8" class="empty-row">No promotions found.</td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @foreach (var promotion in Model.Promotions)
+                            {
+                                <tr>
+                                    <td>@(string.IsNullOrWhiteSpace(promotion.Code) ? "-" : promotion.Code)</td>
+                                    <td>
+                                        <div class="name-cell">@promotion.Name</div>
+                                        @if (!string.IsNullOrWhiteSpace(promotion.CreatedBy))
+                                        {
+                                            <div class="sub-cell">By @promotion.CreatedBy</div>
+                                        }
+                                    </td>
+                                    <td>@GetTypeLabel(promotion.PromotionType)</td>
+                                    <td>
+                                        @if (promotion.PromotionType == "Percent")
+                                        {
+                                            <text>@promotion.DiscountValue.ToString("0.##")%</text>
+                                        }
+                                        else if (promotion.PromotionType == "FreeShipping")
+                                        {
+                                            <text>Shipping Free</text>
+                                        }
+                                        else
+                                        {
+                                            <text>@promotion.DiscountValue.ToString("N2")</text>
+                                        }
+                                    </td>
+                                    <td><span class="status-pill @promotion.Status.ToLowerInvariant()">@promotion.Status</span></td>
+                                    <td>@promotion.StartAt.ToString("yyyy-MM-dd") - @promotion.EndAt.ToString("yyyy-MM-dd")</td>
+                                    <td>@promotion.Priority</td>
+                                    <td class="action-cell">
+                                        <button type="button" class="btn-icon btn-edit"
+                                            data-id="@promotion.PromotionId"
+                                            data-code="@promotion.Code"
+                                            data-name="@promotion.Name"
+                                            data-description="@promotion.Description"
+                                            data-type="@promotion.PromotionType"
+                                            data-value="@promotion.DiscountValue"
+                                            data-min="@promotion.MinOrderAmount"
+                                            data-max="@promotion.MaxDiscountAmount"
+                                            data-start="@promotion.StartAt.ToString("yyyy-MM-ddTHH:mm")"
+                                            data-end="@promotion.EndAt.ToString("yyyy-MM-ddTHH:mm")"
+                                            data-limit-total="@promotion.UsageLimitTotal"
+                                            data-limit-user="@promotion.UsageLimitPerUser"
+                                            data-priority="@promotion.Priority"
+                                            data-status="@promotion.Status"
+                                            data-stackable="@promotion.IsStackable.ToString().ToLowerInvariant()"
+                                            aria-label="Edit @promotion.Name"
+                                            onclick="openEditModal(this)">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button type="button" class="btn-icon btn-delete"
+                                            data-id="@promotion.PromotionId"
+                                            data-name="@promotion.Name"
+                                            aria-label="Delete @promotion.Name"
+                                            onclick="openDeleteModal(this)">
+                                            <i class="bi bi-trash3"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <section class="card form-card">
+            <div class="card-head">
+                <h3>Create Promotion</h3>
+                <p>Set code, discount type, schedule, and limits.</p>
+            </div>
+
+            <form asp-action="CreatePromotion" asp-controller="Admin" method="post" class="promo-form">
+                @Html.AntiForgeryToken()
+                <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label asp-for="CreatePromotion.Code">Code</label>
+                        <input asp-for="CreatePromotion.Code" class="form-input" placeholder="WELCOME10" />
+                        <span asp-validation-for="CreatePromotion.Code" class="field-error"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="CreatePromotion.Name">Name *</label>
+                        <input asp-for="CreatePromotion.Name" class="form-input" placeholder="New User Promotion" />
+                        <span asp-validation-for="CreatePromotion.Name" class="field-error"></span>
+                    </div>
+
+                    <div class="form-group form-group-full">
+                        <label asp-for="CreatePromotion.Description">Description</label>
+                        <textarea asp-for="CreatePromotion.Description" class="form-input form-textarea" rows="3" placeholder="Describe this campaign"></textarea>
+                        <span asp-validation-for="CreatePromotion.Description" class="field-error"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="CreatePromotion.PromotionType">Type *</label>
+                        <select asp-for="CreatePromotion.PromotionType" class="form-input">
+                            <option value="Percent">Percent</option>
+                            <option value="FixedAmount">Fixed Amount</option>
+                            <option value="FreeShipping">Free Shipping</option>
+                        </select>
+                        <span asp-validation-for="CreatePromotion.PromotionType" class="field-error"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="CreatePromotion.DiscountValue">Discount Value *</label>
+                        <input asp-for="CreatePromotion.DiscountValue" class="form-input" />
+                        <span asp-validation-for="CreatePromotion.DiscountValue" class="field-error"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="CreatePromotion.MinOrderAmount">Minimum Order</label>
+                        <input asp-for="CreatePromotion.MinOrderAmount" class="form-input" />
+                        <span asp-validation-for="CreatePromotion.MinOrderAmount" class="field-error"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="CreatePromotion.MaxDiscountAmount">Max Discount</label>
+                        <input asp-for="CreatePromotion.MaxDiscountAmount" class="form-input" />
+                        <span asp-validation-for="CreatePromotion.MaxDiscountAmount" class="field-error"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="CreatePromotion.StartAt">Start Date *</label>
+                        <input asp-for="CreatePromotion.StartAt" type="datetime-local" class="form-input" asp-format="{0:yyyy-MM-ddTHH:mm}" />
+                        <span asp-validation-for="CreatePromotion.StartAt" class="field-error"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="CreatePromotion.EndAt">End Date *</label>
+                        <input asp-for="CreatePromotion.EndAt" type="datetime-local" class="form-input" asp-format="{0:yyyy-MM-ddTHH:mm}" />
+                        <span asp-validation-for="CreatePromotion.EndAt" class="field-error"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="CreatePromotion.UsageLimitTotal">Usage Limit Total</label>
+                        <input asp-for="CreatePromotion.UsageLimitTotal" class="form-input" />
+                        <span asp-validation-for="CreatePromotion.UsageLimitTotal" class="field-error"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="CreatePromotion.UsageLimitPerUser">Usage Limit Per User</label>
+                        <input asp-for="CreatePromotion.UsageLimitPerUser" class="form-input" />
+                        <span asp-validation-for="CreatePromotion.UsageLimitPerUser" class="field-error"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="CreatePromotion.Priority">Priority *</label>
+                        <input asp-for="CreatePromotion.Priority" class="form-input" />
+                        <span asp-validation-for="CreatePromotion.Priority" class="field-error"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="CreatePromotion.Status">Status *</label>
+                        <select asp-for="CreatePromotion.Status" class="form-input">
+                            <option value="Active">Active</option>
+                            <option value="Draft">Draft</option>
+                            <option value="Paused">Paused</option>
+                            <option value="Expired">Expired</option>
+                        </select>
+                        <span asp-validation-for="CreatePromotion.Status" class="field-error"></span>
+                    </div>
+                </div>
+
+                <label class="check-row">
+                    <input asp-for="CreatePromotion.IsStackable" type="checkbox" />
+                    <span>Allow stack with other promotions</span>
+                </label>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn-primary">
+                        <i class="bi bi-plus-circle"></i>
+                        Create Promotion
+                    </button>
+                </div>
+            </form>
+        </section>
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<div id="editModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="editModalTitle" hidden>
+    <div class="modal-box">
+        <div class="modal-head">
+            <h3 id="editModalTitle">Edit Promotion</h3>
+            <button type="button" class="modal-close" onclick="closeModal('editModal')" aria-label="Close"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <form asp-action="EditPromotion" asp-controller="Admin" method="post" class="promo-form">
+            @Html.AntiForgeryToken()
+            <input type="hidden" id="edit_PromotionId" name="PromotionId" />
+
+            <div class="form-grid">
+                <div class="form-group">
+                    <label for="edit_Code">Code</label>
+                    <input id="edit_Code" name="Code" class="form-input" placeholder="WELCOME10" />
+                </div>
+                <div class="form-group">
+                    <label for="edit_Name">Name *</label>
+                    <input id="edit_Name" name="Name" class="form-input" required />
+                </div>
+                <div class="form-group form-group-full">
+                    <label for="edit_Description">Description</label>
+                    <textarea id="edit_Description" name="Description" class="form-input form-textarea" rows="2"></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="edit_PromotionType">Type *</label>
+                    <select id="edit_PromotionType" name="PromotionType" class="form-input" onchange="toggleEditDiscount(this)">
+                        <option value="Percent">Percent</option>
+                        <option value="FixedAmount">Fixed Amount</option>
+                        <option value="FreeShipping">Free Shipping</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="edit_DiscountValue">Discount Value *</label>
+                    <input id="edit_DiscountValue" name="DiscountValue" class="form-input" />
+                </div>
+                <div class="form-group">
+                    <label for="edit_MinOrderAmount">Minimum Order</label>
+                    <input id="edit_MinOrderAmount" name="MinOrderAmount" class="form-input" />
+                </div>
+                <div class="form-group">
+                    <label for="edit_MaxDiscountAmount">Max Discount</label>
+                    <input id="edit_MaxDiscountAmount" name="MaxDiscountAmount" class="form-input" />
+                </div>
+                <div class="form-group">
+                    <label for="edit_StartAt">Start Date *</label>
+                    <input id="edit_StartAt" name="StartAt" type="datetime-local" class="form-input" required />
+                </div>
+                <div class="form-group">
+                    <label for="edit_EndAt">End Date *</label>
+                    <input id="edit_EndAt" name="EndAt" type="datetime-local" class="form-input" required />
+                </div>
+                <div class="form-group">
+                    <label for="edit_UsageLimitTotal">Usage Limit Total</label>
+                    <input id="edit_UsageLimitTotal" name="UsageLimitTotal" class="form-input" />
+                </div>
+                <div class="form-group">
+                    <label for="edit_UsageLimitPerUser">Usage Limit Per User</label>
+                    <input id="edit_UsageLimitPerUser" name="UsageLimitPerUser" class="form-input" />
+                </div>
+                <div class="form-group">
+                    <label for="edit_Priority">Priority *</label>
+                    <input id="edit_Priority" name="Priority" class="form-input" required />
+                </div>
+                <div class="form-group">
+                    <label for="edit_Status">Status *</label>
+                    <select id="edit_Status" name="Status" class="form-input">
+                        <option value="Active">Active</option>
+                        <option value="Draft">Draft</option>
+                        <option value="Paused">Paused</option>
+                        <option value="Expired">Expired</option>
+                    </select>
+                </div>
+            </div>
+            <label class="check-row">
+                <input id="edit_IsStackable" name="IsStackable" type="checkbox" value="true" />
+                <span>Allow stack with other promotions</span>
+            </label>
+            <div class="form-actions modal-actions">
+                <button type="button" class="btn-ghost" onclick="closeModal('editModal')">Cancel</button>
+                <button type="submit" class="btn-primary"><i class="bi bi-check-lg"></i> Save Changes</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Delete Modal -->
+<div id="deleteModal" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="deleteModalTitle" hidden>
+    <div class="modal-box modal-box-sm">
+        <div class="modal-head">
+            <h3 id="deleteModalTitle">Delete Promotion</h3>
+            <button type="button" class="modal-close" onclick="closeModal('deleteModal')" aria-label="Close"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="modal-body">
+            <div class="delete-icon"><i class="bi bi-exclamation-triangle-fill"></i></div>
+            <p class="delete-msg">Are you sure you want to delete <strong id="deletePromotionName"></strong>?</p>
+            <p class="delete-sub">This action cannot be undone.</p>
+        </div>
+        <form asp-action="DeletePromotion" asp-controller="Admin" method="post" class="modal-actions">
+            @Html.AntiForgeryToken()
+            <input type="hidden" id="delete_PromotionId" name="promotionId" />
+            <button type="button" class="btn-ghost" onclick="closeModal('deleteModal')">Cancel</button>
+            <button type="submit" class="btn-danger"><i class="bi bi-trash3"></i> Delete</button>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            var statusFilter = document.getElementById('statusFilter');
+            if (statusFilter) {
+                statusFilter.value = '@selectedStatus';
+            }
+
+            var typeSelect = document.getElementById('CreatePromotion_PromotionType');
+            var discountInput = document.getElementById('CreatePromotion_DiscountValue');
+
+            function toggleDiscountValue() {
+                var isFreeShipping = typeSelect.value === 'FreeShipping';
+                discountInput.disabled = isFreeShipping;
+                discountInput.style.opacity = isFreeShipping ? '0.4' : '';
+                discountInput.style.cursor = isFreeShipping ? 'not-allowed' : '';
+                if (isFreeShipping) {
+                    discountInput.value = '0';
+                }
+            }
+
+            if (typeSelect && discountInput) {
+                typeSelect.addEventListener('change', toggleDiscountValue);
+                toggleDiscountValue();
+            }
+        })();
+
+        function openEditModal(btn) {
+            document.getElementById('edit_PromotionId').value = btn.dataset.id;
+            document.getElementById('edit_Code').value = btn.dataset.code || '';
+            document.getElementById('edit_Name').value = btn.dataset.name || '';
+            document.getElementById('edit_Description').value = btn.dataset.description || '';
+            document.getElementById('edit_PromotionType').value = btn.dataset.type || 'Percent';
+            document.getElementById('edit_DiscountValue').value = btn.dataset.value || '';
+            document.getElementById('edit_MinOrderAmount').value = btn.dataset.min || '';
+            document.getElementById('edit_MaxDiscountAmount').value = btn.dataset.max || '';
+            document.getElementById('edit_StartAt').value = btn.dataset.start || '';
+            document.getElementById('edit_EndAt').value = btn.dataset.end || '';
+            document.getElementById('edit_UsageLimitTotal').value = btn.dataset.limitTotal || '';
+            document.getElementById('edit_UsageLimitPerUser').value = btn.dataset.limitUser || '';
+            document.getElementById('edit_Priority').value = btn.dataset.priority || '100';
+            document.getElementById('edit_Status').value = btn.dataset.status || 'Active';
+            document.getElementById('edit_IsStackable').checked = btn.dataset.stackable === 'true';
+            toggleEditDiscount(document.getElementById('edit_PromotionType'));
+            showModal('editModal');
+        }
+
+        function openDeleteModal(btn) {
+            document.getElementById('delete_PromotionId').value = btn.dataset.id;
+            document.getElementById('deletePromotionName').textContent = btn.dataset.name;
+            showModal('deleteModal');
+        }
+
+        function toggleEditDiscount(select) {
+            var isFree = select.value === 'FreeShipping';
+            var input = document.getElementById('edit_DiscountValue');
+            input.disabled = isFree;
+            input.style.opacity = isFree ? '0.4' : '';
+            input.style.cursor = isFree ? 'not-allowed' : '';
+            if (isFree) input.value = '0';
+        }
+
+        function showModal(id) {
+            var modal = document.getElementById(id);
+            modal.hidden = false;
+            document.body.style.overflow = 'hidden';
+            modal.addEventListener('click', function onBackdrop(e) {
+                if (e.target === modal) {
+                    closeModal(id);
+                    modal.removeEventListener('click', onBackdrop);
+                }
+            });
+        }
+
+        function closeModal(id) {
+            document.getElementById(id).hidden = true;
+            document.body.style.overflow = '';
+        }
+
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape') {
+                closeModal('editModal');
+                closeModal('deleteModal');
+            }
+        });
+    </script>
+}

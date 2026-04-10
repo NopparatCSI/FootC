@@ -9,4 +9,122 @@
     <link rel="stylesheet" href="~/css/ShopPages.css" asp-append-version="true" />
 }
 
-<partial name="_ShopUtilityPage" model="Model" />
+<div class="shop-page-shell shop-utility-shell shop-utility-shell--wishlist">
+    <section class="shop-page-hero shop-utility-hero">
+        <div>
+            <p class="shop-page-eyebrow">@Model.Eyebrow</p>
+            <h1 class="shop-page-title">@Model.Title</h1>
+            <p class="shop-page-description">@Model.Description</p>
+        </div>
+        <a asp-controller="@Model.ActionController" asp-action="@Model.ActionName" class="shop-primary-link utility-hero-cta">@Model.ActionText</a>
+    </section>
+
+    <section class="utility-kpi-band">
+        <article class="utility-kpi-card">
+            <p>Saved products</p>
+            <strong id="wishlistCount">0</strong>
+        </article>
+        <article class="utility-kpi-card">
+            <p>Ready to buy</p>
+            <strong id="wishlistReadyCount">0</strong>
+        </article>
+    </section>
+
+    <section class="shop-utility-panel">
+        <h2>My Favorites</h2>
+        <p>@Model.Message</p>
+    </section>
+
+    <section class="wishlist-list" id="wishlistList"></section>
+
+    <section class="shop-empty-state" id="wishlistEmpty" hidden>
+        <h2>No favorite products yet</h2>
+        <p>Go to any product page and tap Favorite to save it here.</p>
+        <a asp-controller="Shop" asp-action="NewArrivals" class="shop-primary-link">Browse New Arrivals</a>
+    </section>
+</div>
+
+@section Scripts {
+<script>
+(function () {
+    const FAV_KEY = 'cp_favorites';
+    const catalog = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.RecommendedProducts));
+    const normalizedCatalog = (catalog || []).map(function (product) {
+        return {
+            productId: String(product.ProductId ?? product.productId ?? ''),
+            name: product.Name ?? product.name ?? '',
+            brandName: product.BrandName ?? product.brandName ?? '',
+            gender: product.Gender ?? product.gender ?? '',
+            shortDescription: product.ShortDescription ?? product.shortDescription ?? '',
+            imageUrl: product.ImageUrl ?? product.imageUrl ?? '/images/Running-Shoe-2.jpeg',
+            regularPrice: Number(product.RegularPrice ?? product.regularPrice ?? 0),
+            salePrice: product.SalePrice ?? product.salePrice
+        };
+    });
+    const listEl = document.getElementById('wishlistList');
+    const emptyEl = document.getElementById('wishlistEmpty');
+    const countEl = document.getElementById('wishlistCount');
+    const readyCountEl = document.getElementById('wishlistReadyCount');
+
+    function getFavIds() {
+        try {
+            return JSON.parse(localStorage.getItem(FAV_KEY) || '[]').map(String);
+        } catch {
+            return [];
+        }
+    }
+
+    function formatPrice(product) {
+        const hasSale = product.salePrice && product.salePrice > 0 && product.salePrice < product.regularPrice;
+        const current = hasSale ? product.salePrice : product.regularPrice;
+        const currentHtml = '<span class="shop-price-current">฿' + Number(current).toLocaleString() + '</span>';
+        if (!hasSale) return currentHtml;
+
+        return currentHtml
+            + '<span class="shop-price-old">฿' + Number(product.regularPrice).toLocaleString() + '</span>';
+    }
+
+    function render() {
+        const favIds = getFavIds();
+        const idSet = new Set(favIds);
+        const items = normalizedCatalog.filter(product => idSet.has(product.productId));
+
+        if (countEl) countEl.textContent = String(items.length);
+        if (readyCountEl) readyCountEl.textContent = String(items.length);
+
+        if (items.length === 0) {
+            listEl.innerHTML = '';
+            emptyEl.hidden = false;
+            return;
+        }
+
+        emptyEl.hidden = true;
+        listEl.innerHTML = items.map(product =>
+            '<article class="wishlist-item">'
+            + '<a class="wishlist-item-media" href="/Products/Product?id=' + product.productId + '"><img src="' + product.imageUrl + '" alt="' + product.name + '"></a>'
+            + '<div class="wishlist-item-body">'
+            + '<p class="wishlist-item-meta">' + product.brandName + ' · ' + product.gender + '</p>'
+            + '<h2 class="wishlist-item-title"><a href="/Products/Product?id=' + product.productId + '">' + product.name + '</a></h2>'
+            + '<p class="wishlist-item-desc">' + (product.shortDescription || '') + '</p>'
+            + '<div class="wishlist-item-footer">'
+            + '<div class="shop-price-block">' + formatPrice(product) + '</div>'
+            + '<button type="button" class="wishlist-remove-btn" data-id="' + product.productId + '">Remove</button>'
+            + '</div>'
+            + '</div>'
+            + '</article>'
+        ).join('');
+
+        listEl.querySelectorAll('.wishlist-remove-btn').forEach(function (button) {
+            button.addEventListener('click', function () {
+                const productId = String(button.dataset.id || '');
+                const next = getFavIds().filter(id => id !== productId);
+                localStorage.setItem(FAV_KEY, JSON.stringify(next));
+                render();
+            });
+        });
+    }
+
+    render();
+})();
+</script>
+}

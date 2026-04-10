@@ -1,231 +1,469 @@
-@using System.Security.Claims
+@model WebApp1.ViewModels.AdminDashboardViewModel
+@using System.Text.Json
 @using WebApp1.Security
 @{
     Layout = "_AdminLayout";
     ViewData["Title"] = "Dashboard";
-    var adminName = User.Identity?.Name ?? "Admin";
-    var adminRole = User.FindFirstValue(ClaimTypes.Role) ?? AdminRoles.Support;
-    var canManageCatalog  = User.IsInRole(AdminRoles.SuperAdmin) || User.IsInRole(AdminRoles.CatalogManager);
-    var canManageOrders   = User.IsInRole(AdminRoles.SuperAdmin) || User.IsInRole(AdminRoles.OrderManager);
-    var canManageUsers    = User.IsInRole(AdminRoles.SuperAdmin) || User.IsInRole(AdminRoles.Support);
-    var canManageAdmins   = User.IsInRole(AdminRoles.SuperAdmin);
+    var adminName = Model.AdminName;
+    var adminRole = Model.AdminRole;
+    var canManageCatalog = adminRole == AdminRoles.SuperAdmin || adminRole == AdminRoles.Admin;
+    var canManageOrders = adminRole == AdminRoles.SuperAdmin || adminRole == AdminRoles.Packer;
+    var canManageUsers = adminRole == AdminRoles.SuperAdmin || adminRole == AdminRoles.Admin;
+    var canManageAdmins = adminRole == AdminRoles.SuperAdmin;
+
+    var statusLabelsJson = JsonSerializer.Serialize(Model.OrderStatusBreakdown.Select(x => x.Label));
+    var statusCountJson = JsonSerializer.Serialize(Model.OrderStatusBreakdown.Select(x => x.Count));
+    var monthLabelsJson = JsonSerializer.Serialize(Model.MonthlyRevenue.Select(x => x.Label));
+    var monthAmountJson = JsonSerializer.Serialize(Model.MonthlyRevenue.Select(x => x.Amount));
+    var dailyLabelsJson = JsonSerializer.Serialize(Model.DailyRevenue.Select(x => x.Label));
+    var dailyRevenueJson = JsonSerializer.Serialize(Model.DailyRevenue.Select(x => x.Amount));
+    var dailyPendingJson = JsonSerializer.Serialize(Model.DailyOrderStatus.Select(x => x.Pending));
+    var dailyProcessingJson = JsonSerializer.Serialize(Model.DailyOrderStatus.Select(x => x.Processing));
+    var dailyShippedJson = JsonSerializer.Serialize(Model.DailyOrderStatus.Select(x => x.Shipped));
+    var dailyDeliveredJson = JsonSerializer.Serialize(Model.DailyOrderStatus.Select(x => x.Delivered));
+    var dailyCancelledJson = JsonSerializer.Serialize(Model.DailyOrderStatus.Select(x => x.Cancelled));
+
+    var catPalette = new[] { "#6366f1", "#0ea5e9", "#f59e0b", "#10b981", "#ef4444" };
+    var categoryLabelsJson = JsonSerializer.Serialize(Model.ProductByCategory.Select(x => x.Label));
+    var categoryCountJson  = JsonSerializer.Serialize(Model.ProductByCategory.Select(x => x.Count));
+    var categoryColorsJson = JsonSerializer.Serialize(
+        Model.ProductByCategory.Select((_, i) => catPalette[i % catPalette.Length]));
+
+    var rangeOptions = new[] { 7, 30, 90 };
+    var funnelBase = Math.Max(1, Model.FunnelCreatedOrders);
+    var paidWidth = Math.Round((Model.FunnelPaidOrders / (decimal)funnelBase) * 100m, 1);
+    var shippedWidth = Math.Round((Model.FunnelShippedOrders / (decimal)funnelBase) * 100m, 1);
+    var deliveredWidth = Math.Round((Model.FunnelDeliveredOrders / (decimal)funnelBase) * 100m, 1);
 }
 
 <style>
-    .dash-page { padding: 28px 24px; width: 100%; }
+    /* ── Dashboard page: matches Geist Mono / black admin theme ── */
+    .db { width: 100%; font-family: "Geist Mono", monospace; }
 
-    .dash-welcome {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        flex-wrap: wrap;
-        gap: 16px;
-        margin-bottom: 32px;
+    /* Welcome */
+    .db-welcome {
+        display: flex; align-items: center; justify-content: space-between;
+        flex-wrap: wrap; gap: 10px; margin-bottom: 18px;
+    }
+    .db-welcome-title { margin: 0; font-size: 20px; font-weight: 700; color: #111; letter-spacing: -0.03em; }
+    .db-welcome-sub   { margin: 2px 0 0; font-size: 11px; color: #9ca3af; }
+    .db-role-chip {
+        display: inline-flex; align-items: center; gap: 5px;
+        padding: 4px 12px; border-radius: 4px; font-size: 10px; font-weight: 700;
+        background: #111; color: #fff; text-transform: uppercase; letter-spacing: 0.06em;
     }
 
-    .dash-welcome-text h2 {
-        font-size: 22px;
-        font-weight: 700;
-        color: #111827;
-        margin: 0 0 4px;
+    /* KPI row */
+    .db-kpis {
+        display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
+        gap: 10px; margin-bottom: 14px;
     }
+    .db-kpi {
+        background: #fff; border: 1px solid #e5e7eb; border-radius: 6px;
+        padding: 12px 14px; border-left: 3px solid #111;
+    }
+    .db-kpi[data-c="indigo"] { border-left-color: #6366f1; }
+    .db-kpi[data-c="sky"]    { border-left-color: #0ea5e9; }
+    .db-kpi[data-c="amber"]  { border-left-color: #f59e0b; }
+    .db-kpi[data-c="green"]  { border-left-color: #10b981; }
+    .db-kpi[data-c="teal"]   { border-left-color: #0f766e; }
 
-    .dash-welcome-text p {
-        font-size: 13px;
-        color: #6b7280;
-        margin: 0;
-    }
+    .db-kpi-top  { display: flex; align-items: center; justify-content: space-between; margin-bottom: 5px; }
+    .db-kpi-lbl  { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: #9ca3af; }
+    .db-kpi-ico  { font-size: 15px; }
+    .db-kpi[data-c="indigo"] .db-kpi-ico { color: #6366f1; }
+    .db-kpi[data-c="sky"]    .db-kpi-ico { color: #0ea5e9; }
+    .db-kpi[data-c="amber"]  .db-kpi-ico { color: #f59e0b; }
+    .db-kpi[data-c="green"]  .db-kpi-ico { color: #10b981; }
+    .db-kpi[data-c="teal"]   .db-kpi-ico { color: #0f766e; }
+    .db-kpi-val  { font-size: 24px; font-weight: 700; color: #111; line-height: 1; letter-spacing: -0.03em; }
+    .db-kpi-note { margin-top: 4px; font-size: 10px; color: #6b7280; }
+    .db-pos { color: #047857; font-weight: 700; }
+    .db-neg { color: #b91c1c; font-weight: 700; }
 
-    .dash-role-chip {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        padding: 6px 14px;
-        border-radius: 999px;
-        font-size: 12px;
-        font-weight: 600;
-        border: 1.5px solid #111827;
-        background: #111827;
-        color: #fff;
+    /* Filter pills */
+    .db-filter-row { display: flex; align-items: center; gap: 6px; margin-bottom: 14px; flex-wrap: wrap; }
+    .db-filter-lbl { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: #9ca3af; margin-right: 2px; }
+    .db-pill {
+        padding: 3px 12px; border-radius: 3px; border: 1px solid #d1d5db;
+        font-size: 11px; font-family: "Geist Mono", monospace; font-weight: 500;
+        background: #fff; color: #374151; text-decoration: none; transition: all 0.1s;
     }
+    .db-pill:hover  { border-color: #111; color: #111; text-decoration: none; }
+    .db-pill.active { background: #111; border-color: #111; color: #fff; text-decoration: none; }
 
-    /* ---- Access cards grid ---- */
-    .dash-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-        gap: 16px;
-    }
+    /* Layout rows */
+    .db-row { display: grid; gap: 10px; margin-bottom: 10px; }
+    .db-r2  { grid-template-columns: 1.6fr 1fr; }
+    .db-r2e { grid-template-columns: 1fr 1fr; }
+    .db-r1  { grid-template-columns: 1fr; }
 
-    .dash-card {
-        background: #fff;
-        border: 1px solid #e5e7eb;
-        border-radius: 12px;
-        padding: 24px 20px;
-        display: flex;
-        flex-direction: column;
-        gap: 12px;
-        text-decoration: none;
-        color: inherit;
-        transition: border-color 0.15s, box-shadow 0.15s;
+    /* Chart panels */
+    .db-panel { background: #fff; border: 1px solid #e5e7eb; border-radius: 6px; padding: 14px 16px; }
+    .db-panel-title {
+        display: flex; align-items: center; gap: 6px;
+        font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: #9ca3af;
+        margin: 0 0 14px; padding-bottom: 8px; border-bottom: 1px solid #f3f4f6;
     }
+    .db-panel-title i { font-size: 12px; }
 
-    .dash-card:hover {
-        border-color: #111827;
-        box-shadow: 0 4px 16px rgba(0,0,0,0.08);
-        color: inherit;
-        text-decoration: none;
-    }
+    /* Funnel */
+    .db-funnel       { display: grid; gap: 12px; }
+    .db-funnel-step  { display: grid; gap: 4px; }
+    .db-funnel-meta  { display: flex; justify-content: space-between; align-items: baseline; font-size: 11px; color: #6b7280; }
+    .db-funnel-meta strong { color: #111; font-size: 13px; }
+    .db-funnel-pct   { font-size: 10px; color: #9ca3af; margin-left: 4px; }
+    .db-funnel-track { height: 7px; background: #f3f4f6; border-radius: 2px; overflow: hidden; }
+    .db-funnel-fill  { height: 100%; border-radius: 2px; }
 
-    .dash-card.locked {
-        opacity: 0.45;
-        pointer-events: none;
+    /* Quick-access menu */
+    .db-section-lbl {
+        font-size: 10px; font-weight: 700; letter-spacing: 0.12em;
+        text-transform: uppercase; color: #9ca3af; margin: 22px 0 10px;
     }
+    .db-menu-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; }
+    .db-menu-card {
+        background: #fff; border: 1px solid #e5e7eb; border-radius: 6px;
+        padding: 14px; display: flex; gap: 12px; align-items: flex-start;
+        text-decoration: none; color: inherit; transition: border-color 0.12s, box-shadow 0.12s;
+    }
+    .db-menu-card:hover { border-color: #111; box-shadow: 0 2px 8px rgba(0,0,0,0.07); color: inherit; text-decoration: none; }
+    .db-menu-card.locked { opacity: 0.38; pointer-events: none; }
+    .db-menu-ico {
+        width: 34px; height: 34px; border-radius: 5px; background: #111; color: #fff;
+        display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0;
+    }
+    .db-menu-ico.gray { background: #f3f4f6; color: #d1d5db; }
+    .db-menu-title { font-size: 12px; font-weight: 700; color: #111; margin: 0 0 2px; }
+    .db-menu-desc  { font-size: 11px; color: #6b7280; line-height: 1.45; margin: 0; }
+    .db-ok   { color: #047857; font-size: 10px; margin-top: 4px; }
+    .db-lock { color: #9ca3af; font-size: 10px; margin-top: 4px; }
 
-    .dash-card-icon {
-        width: 44px;
-        height: 44px;
-        border-radius: 10px;
-        background: #111827;
-        color: #fff;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 20px;
-    }
-
-    .dash-card-icon.gray {
-        background: #f3f4f6;
-        color: #d1d5db;
-    }
-
-    .dash-card-title {
-        font-size: 15px;
-        font-weight: 600;
-        color: #111827;
-    }
-
-    .dash-card-desc {
-        font-size: 12.5px;
-        color: #6b7280;
-        line-height: 1.5;
-    }
-
-    .dash-card-badge {
-        font-size: 11px;
-        color: #9ca3af;
-        display: flex;
-        align-items: center;
-        gap: 4px;
-    }
-
-    .dash-section-label {
-        font-size: 11px;
-        font-weight: 700;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        color: #9ca3af;
-        margin: 28px 0 12px;
-    }
+    @@media (max-width: 900px) { .db-r2, .db-r2e { grid-template-columns: 1fr; } }
+    @@media (max-width: 640px) { .db-kpi-val { font-size: 20px; } }
 </style>
 
-<div class="dash-page">
+<div class="db">
 
-    <!-- Welcome -->
-    <div class="dash-welcome">
-        <div class="dash-welcome-text">
-            <h2>สวัสดี, @adminName</h2>
-            <p>คุณเข้าสู่ระบบในฐานะ Admin — ทำรายการตามสิทธิ์ที่ได้รับด้านล่าง</p>
+    <div class="db-welcome">
+        <div>
+            <h2 class="db-welcome-title">สวัสดี, @adminName</h2>
+            <p class="db-welcome-sub">ภาพรวมระบบ &middot; @DateTime.Now.ToString("dd MMM yyyy")</p>
         </div>
-        <span class="dash-role-chip">
-            <i class="bi bi-person-gear"></i> @adminRole
-        </span>
+        <span class="db-role-chip"><i class="bi bi-person-gear"></i> @adminRole</span>
     </div>
 
-    <!-- Access cards -->
-    <div class="dash-section-label">เมนูที่เข้าถึงได้</div>
-
-    <div class="dash-grid">
-
-        <a class="dash-card" asp-controller="Products" asp-action="ProductsList">
-            <div class="dash-card-icon @(canManageCatalog ? "" : "gray")">
-                <i class="bi bi-box-seam"></i>
+    <div class="db-kpis">
+        <div class="db-kpi" data-c="indigo">
+            <div class="db-kpi-top">
+                <span class="db-kpi-lbl">Products</span>
+                <i class="bi bi-boxes db-kpi-ico"></i>
             </div>
+            <div class="db-kpi-val">@Model.TotalProducts</div>
+            <div class="db-kpi-note">Active <strong>@Model.ActiveProducts</strong> รายการ</div>
+        </div>
+        <div class="db-kpi" data-c="sky">
+            <div class="db-kpi-top">
+                <span class="db-kpi-lbl">Customers</span>
+                <i class="bi bi-people db-kpi-ico"></i>
+            </div>
+            <div class="db-kpi-val">@Model.TotalCustomers</div>
+            <div class="db-kpi-note">ผู้ใช้งานในระบบ</div>
+        </div>
+        <div class="db-kpi" data-c="amber">
+            <div class="db-kpi-top">
+                <span class="db-kpi-lbl">Orders</span>
+                <i class="bi bi-receipt db-kpi-ico"></i>
+            </div>
+            <div class="db-kpi-val">@Model.TotalOrders</div>
+            <div class="db-kpi-note">Pending <strong>@Model.PendingOrders</strong></div>
+        </div>
+        <div class="db-kpi" data-c="green">
+            <div class="db-kpi-top">
+                <span class="db-kpi-lbl">Revenue (เดือนนี้)</span>
+                <i class="bi bi-graph-up db-kpi-ico"></i>
+            </div>
+            <div class="db-kpi-val">@Model.RevenueThisMonth.ToString("N0")</div>
+            <div class="db-kpi-note">
+                vs เดือนก่อน:
+                <span class="@(Model.RevenueGrowthPercent >= 0 ? "db-pos" : "db-neg")">
+                    @Model.RevenueGrowthPercent.ToString("+0.#;-0.#;0")%
+                </span>
+            </div>
+        </div>
+        <div class="db-kpi" data-c="teal">
+            <div class="db-kpi-top">
+                <span class="db-kpi-lbl">Revenue (@Model.SelectedRangeDays d)</span>
+                <i class="bi bi-calendar-range db-kpi-ico"></i>
+            </div>
+            <div class="db-kpi-val">@Model.RevenueInRange.ToString("N0")</div>
+            <div class="db-kpi-note">
+                vs ช่วงก่อน:
+                <span class="@(Model.RevenueRangeGrowthPercent >= 0 ? "db-pos" : "db-neg")">
+                    @Model.RevenueRangeGrowthPercent.ToString("+0.#;-0.#;0")%
+                </span>
+            </div>
+        </div>
+    </div>
+
+    <div class="db-filter-row">
+        <span class="db-filter-lbl">ช่วงเวลา</span>
+        @foreach (var r in rangeOptions)
+        {
+            <a asp-action="Dashboard" asp-route-days="@r"
+               class="db-pill @(Model.SelectedRangeDays == r ? "active" : "")">@r วัน</a>
+        }
+    </div>
+
+    <div class="db-row db-r2">
+        <div class="db-panel">
+            <p class="db-panel-title"><i class="bi bi-graph-up-arrow"></i> แนวโน้มรายได้รายวัน — @Model.SelectedRangeDays วัน</p>
+            <canvas id="revenueChart" height="110"></canvas>
+        </div>
+        <div class="db-panel">
+            <p class="db-panel-title"><i class="bi bi-pie-chart"></i> สัดส่วนสถานะออเดอร์ (รวม)</p>
+            <canvas id="statusDonutChart" height="110"></canvas>
+        </div>
+    </div>
+
+    <div class="db-row db-r1">
+        <div class="db-panel">
+            <p class="db-panel-title"><i class="bi bi-bar-chart-steps"></i> สถานะออเดอร์รายวัน (Stacked) — @Model.SelectedRangeDays วัน</p>
+            <canvas id="stackedBarChart" height="70"></canvas>
+        </div>
+    </div>
+
+    <div class="db-row db-r2e">
+        <div class="db-panel">
+            <p class="db-panel-title"><i class="bi bi-tag"></i> Top 5 หมวดสินค้า (แยกสี)</p>
+            <canvas id="categoryChart" height="130"></canvas>
+        </div>
+        <div class="db-panel">
+            <p class="db-panel-title"><i class="bi bi-filter"></i> Conversion Funnel — @Model.SelectedRangeDays วัน</p>
+            <div class="db-funnel">
+                <div class="db-funnel-step">
+                    <div class="db-funnel-meta">
+                        <span>Created Orders</span>
+                        <span><strong>@Model.FunnelCreatedOrders</strong> <span class="db-funnel-pct">100%</span></span>
+                    </div>
+                    <div class="db-funnel-track"><div class="db-funnel-fill" style="width:100%;background:#6366f1;"></div></div>
+                </div>
+                <div class="db-funnel-step">
+                    <div class="db-funnel-meta">
+                        <span>Paid Orders</span>
+                        <span><strong>@Model.FunnelPaidOrders</strong> <span class="db-funnel-pct">@paidWidth%</span></span>
+                    </div>
+                    <div class="db-funnel-track"><div class="db-funnel-fill" style="width:@paidWidth%;background:#0ea5e9;"></div></div>
+                </div>
+                <div class="db-funnel-step">
+                    <div class="db-funnel-meta">
+                        <span>Shipped / Delivered</span>
+                        <span><strong>@Model.FunnelShippedOrders</strong> <span class="db-funnel-pct">@shippedWidth%</span></span>
+                    </div>
+                    <div class="db-funnel-track"><div class="db-funnel-fill" style="width:@shippedWidth%;background:#10b981;"></div></div>
+                </div>
+                <div class="db-funnel-step">
+                    <div class="db-funnel-meta">
+                        <span>Delivered</span>
+                        <span><strong>@Model.FunnelDeliveredOrders</strong> <span class="db-funnel-pct">@deliveredWidth%</span></span>
+                    </div>
+                    <div class="db-funnel-track"><div class="db-funnel-fill" style="width:@deliveredWidth%;background:#047857;"></div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <p class="db-section-lbl">เมนูที่เข้าถึงได้</p>
+
+    <div class="db-menu-grid">
+        <a class="db-menu-card @(canManageCatalog ? "" : "locked")" asp-controller="Products" asp-action="ProductsList">
+            <div class="db-menu-ico @(canManageCatalog ? "" : "gray")"><i class="bi bi-box-seam"></i></div>
             <div>
-                <div class="dash-card-title">Products</div>
-                <div class="dash-card-desc">จัดการสินค้า หมวดหมู่ แบรนด์ และสต็อก</div>
-            </div>
-            <div class="dash-card-badge">
-                @if (canManageCatalog)
-                {
-                    <i class="bi bi-check-circle text-success"></i> <span>มีสิทธิ์เข้าถึง</span>
-                }
-                else
-                {
-                    <i class="bi bi-lock"></i> <span>ต้องการ CatalogManager ขึ้นไป</span>
-                }
+                <p class="db-menu-title">Products</p>
+                <p class="db-menu-desc">จัดการสินค้า หมวดหมู่ แบรนด์ และสต็อก</p>
+                <p class="@(canManageCatalog ? "db-ok" : "db-lock")">
+                    @if (canManageCatalog) { <i class="bi bi-check-circle"></i><text> มีสิทธิ์เข้าถึง</text> }
+                    else { <i class="bi bi-lock"></i><text> ต้องการ Admin</text> }
+                </p>
             </div>
         </a>
-
-        <a class="dash-card @(canManageOrders ? "" : "locked")" asp-controller="Order" asp-action="OrdersList">
-            <div class="dash-card-icon @(canManageOrders ? "" : "gray")">
-                <i class="bi bi-receipt"></i>
-            </div>
+        <a class="db-menu-card @(canManageOrders ? "" : "locked")" asp-controller="Order" asp-action="OrdersList">
+            <div class="db-menu-ico @(canManageOrders ? "" : "gray")"><i class="bi bi-receipt"></i></div>
             <div>
-                <div class="dash-card-title">Orders</div>
-                <div class="dash-card-desc">ดูและจัดการคำสั่งซื้อ การจัดส่ง และการชำระเงิน</div>
-            </div>
-            <div class="dash-card-badge">
-                @if (canManageOrders)
-                {
-                    <i class="bi bi-check-circle text-success"></i> <span>มีสิทธิ์เข้าถึง</span>
-                }
-                else
-                {
-                    <i class="bi bi-lock"></i> <span>ต้องการ OrderManager ขึ้นไป</span>
-                }
+                <p class="db-menu-title">Orders</p>
+                <p class="db-menu-desc">ดูและจัดการคำสั่งซื้อ การจัดส่ง และการชำระเงิน</p>
+                <p class="@(canManageOrders ? "db-ok" : "db-lock")">
+                    @if (canManageOrders) { <i class="bi bi-check-circle"></i><text> มีสิทธิ์เข้าถึง</text> }
+                    else { <i class="bi bi-lock"></i><text> ต้องการ Packer</text> }
+                </p>
             </div>
         </a>
-
-        <a class="dash-card @(canManageUsers ? "" : "locked")" asp-controller="User" asp-action="Index">
-            <div class="dash-card-icon @(canManageUsers ? "" : "gray")">
-                <i class="bi bi-people"></i>
-            </div>
+        <a class="db-menu-card @(canManageUsers ? "" : "locked")" asp-controller="User" asp-action="Index">
+            <div class="db-menu-ico @(canManageUsers ? "" : "gray")"><i class="bi bi-people"></i></div>
             <div>
-                <div class="dash-card-title">Users</div>
-                <div class="dash-card-desc">ดูข้อมูลและแก้ไขบัญชีลูกค้า</div>
-            </div>
-            <div class="dash-card-badge">
-                @if (canManageUsers)
-                {
-                    <i class="bi bi-check-circle text-success"></i> <span>มีสิทธิ์เข้าถึง</span>
-                }
-                else
-                {
-                    <i class="bi bi-lock"></i> <span>ต้องการ Support ขึ้นไป</span>
-                }
+                <p class="db-menu-title">Users</p>
+                <p class="db-menu-desc">ดูข้อมูลและแก้ไขบัญชีลูกค้า</p>
+                <p class="@(canManageUsers ? "db-ok" : "db-lock")">
+                    @if (canManageUsers) { <i class="bi bi-check-circle"></i><text> มีสิทธิ์เข้าถึง</text> }
+                    else { <i class="bi bi-lock"></i><text> ต้องการ Admin</text> }
+                </p>
             </div>
         </a>
-
-        <a class="dash-card @(canManageAdmins ? "" : "locked")" asp-controller="Admin" asp-action="AdminList">
-            <div class="dash-card-icon @(canManageAdmins ? "" : "gray")">
-                <i class="bi bi-person-gear"></i>
-            </div>
+        <a class="db-menu-card @(canManageAdmins ? "" : "locked")" asp-controller="Admin" asp-action="AdminList">
+            <div class="db-menu-ico @(canManageAdmins ? "" : "gray")"><i class="bi bi-person-gear"></i></div>
             <div>
-                <div class="dash-card-title">Admin Management</div>
-                <div class="dash-card-desc">เพิ่ม ลบ และกำหนด Role ให้ผู้ดูแลระบบ</div>
-            </div>
-            <div class="dash-card-badge">
-                @if (canManageAdmins)
-                {
-                    <i class="bi bi-check-circle text-success"></i> <span>มีสิทธิ์เข้าถึง (SuperAdmin)</span>
-                }
-                else
-                {
-                    <i class="bi bi-lock"></i> <span>ต้องการ SuperAdmin</span>
-                }
+                <p class="db-menu-title">Admin Management</p>
+                <p class="db-menu-desc">เพิ่ม ลบ และกำหนด Role ให้ผู้ดูแลระบบ</p>
+                <p class="@(canManageAdmins ? "db-ok" : "db-lock")">
+                    @if (canManageAdmins) { <i class="bi bi-check-circle"></i><text> มีสิทธิ์เข้าถึง (SuperAdmin)</text> }
+                    else { <i class="bi bi-lock"></i><text> ต้องการ SuperAdmin</text> }
+                </p>
             </div>
         </a>
-
+        <a class="db-menu-card @(canManageCatalog ? "" : "locked")" asp-controller="Admin" asp-action="BannerManagement">
+            <div class="db-menu-ico @(canManageCatalog ? "" : "gray")"><i class="bi bi-images"></i></div>
+            <div>
+                <p class="db-menu-title">Banner Management</p>
+                <p class="db-menu-desc">อัพโหลดรูปภาพพื้นหลัง Banner Slide และช่องหมวดหมู่</p>
+                <p class="@(canManageCatalog ? "db-ok" : "db-lock")">
+                    @if (canManageCatalog) { <i class="bi bi-check-circle"></i><text> มีสิทธิ์เข้าถึง</text> }
+                    else { <i class="bi bi-lock"></i><text> ต้องการ Admin</text> }
+                </p>
+            </div>
+        </a>
     </div>
 
 </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    Chart.defaults.font.family = '"Geist Mono", monospace';
+    Chart.defaults.font.size   = 11;
+    Chart.defaults.color       = '#6b7280';
+
+    const dailyLabels    = @Html.Raw(dailyLabelsJson);
+    const dailyRevenue   = @Html.Raw(dailyRevenueJson);
+    const dailyPending   = @Html.Raw(dailyPendingJson);
+    const dailyProcess   = @Html.Raw(dailyProcessingJson);
+    const dailyShipped   = @Html.Raw(dailyShippedJson);
+    const dailyDelivered = @Html.Raw(dailyDeliveredJson);
+    const dailyCancelled = @Html.Raw(dailyCancelledJson);
+    const statusLabels   = @Html.Raw(statusLabelsJson);
+    const statusCounts   = @Html.Raw(statusCountJson);
+    const catLabels      = @Html.Raw(categoryLabelsJson);
+    const catCounts      = @Html.Raw(categoryCountJson);
+    const catColors      = @Html.Raw(categoryColorsJson);
+
+    const STATUS_COLOR = {
+        Pending:    '#f59e0b',
+        Processing: '#0ea5e9',
+        Shipped:    '#6366f1',
+        Delivered:  '#10b981',
+        Cancelled:  '#ef4444'
+    };
+
+    /* Revenue line */
+    const revenueCtx = document.getElementById('revenueChart');
+    if (revenueCtx) {
+        new Chart(revenueCtx, {
+            type: 'line',
+            data: {
+                labels: dailyLabels,
+                datasets: [{
+                    label: 'Revenue',
+                    data: dailyRevenue,
+                    borderColor: '#111',
+                    borderWidth: 2,
+                    backgroundColor: 'rgba(17,17,17,0.07)',
+                    fill: true,
+                    tension: 0.35,
+                    pointRadius: dailyLabels.length > 30 ? 0 : 3,
+                    pointBackgroundColor: '#111',
+                    pointHoverRadius: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    y: { beginAtZero: true, grid: { color: '#f3f4f6' },
+                         ticks: { callback: v => Number(v).toLocaleString() } },
+                    x: { grid: { display: false }, ticks: { maxTicksLimit: 9 } }
+                }
+            }
+        });
+    }
+
+    /* Status donut */
+    const donutCtx = document.getElementById('statusDonutChart');
+    if (donutCtx && statusLabels.length > 0) {
+        const donutColors = statusLabels.map(l => STATUS_COLOR[l] ?? '#d1d5db');
+        new Chart(donutCtx, {
+            type: 'doughnut',
+            data: {
+                labels: statusLabels,
+                datasets: [{ data: statusCounts, backgroundColor: donutColors, borderWidth: 2, borderColor: '#fff' }]
+            },
+            options: {
+                responsive: true,
+                cutout: '62%',
+                plugins: {
+                    legend: { position: 'right', labels: { boxWidth: 10, padding: 10, font: { size: 11 } } }
+                }
+            }
+        });
+    }
+
+    /* Stacked daily */
+    const stackedCtx = document.getElementById('stackedBarChart');
+    if (stackedCtx && dailyLabels.length > 0) {
+        new Chart(stackedCtx, {
+            type: 'bar',
+            data: {
+                labels: dailyLabels,
+                datasets: [
+                    { label: 'Pending',    data: dailyPending,   backgroundColor: STATUS_COLOR.Pending   },
+                    { label: 'Processing', data: dailyProcess,   backgroundColor: STATUS_COLOR.Processing },
+                    { label: 'Shipped',    data: dailyShipped,   backgroundColor: STATUS_COLOR.Shipped   },
+                    { label: 'Delivered',  data: dailyDelivered, backgroundColor: STATUS_COLOR.Delivered  },
+                    { label: 'Cancelled',  data: dailyCancelled, backgroundColor: STATUS_COLOR.Cancelled  }
+                ]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: true, position: 'bottom', labels: { boxWidth: 10, padding: 14 } } },
+                scales: {
+                    x: { stacked: true, grid: { display: false }, ticks: { maxTicksLimit: 10 } },
+                    y: { stacked: true, beginAtZero: true, grid: { color: '#f3f4f6' }, ticks: { precision: 0 } }
+                }
+            }
+        });
+    }
+
+    /* Category bar */
+    const categoryCtx = document.getElementById('categoryChart');
+    if (categoryCtx && catLabels.length > 0) {
+        new Chart(categoryCtx, {
+            type: 'bar',
+            data: {
+                labels: catLabels,
+                datasets: [{
+                    label: 'Products',
+                    data: catCounts,
+                    backgroundColor: catColors,
+                    borderRadius: 3,
+                    borderSkipped: false
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { beginAtZero: true, grid: { color: '#f3f4f6' }, ticks: { precision: 0 } },
+                    y: { grid: { display: false } }
+                }
+            }
+        });
+    }
+</script>

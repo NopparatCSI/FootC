@@ -2,46 +2,39 @@
 
 @{
     var filtersOpenByDefault = true;
-    var categories = Model.Products
-        .Select(product => product.CategoryName)
-        .Where(name => !string.IsNullOrWhiteSpace(name))
-        .Distinct(StringComparer.OrdinalIgnoreCase)
-        .OrderBy(name => name)
+    var categories = Model.AvailableCategories;
+    var genders = Model.AvailableGenders;
+    var brands = Model.AvailableBrands;
+    var sizes = Model.AvailableSizes;
+    var pageTypes = new List<string> { "On Sale", "Regular Price" };
+    var standardUsSizes = new List<string>
+    {
+        "3.0 US", "3.5 US", "4.0 US", "4.5 US", "5.0 US", "5.5 US", "6.0 US", "6.5 US",
+        "7.0 US", "7.5 US", "8.0 US", "8.5 US", "9.0 US", "9.5 US", "10.0 US", "10.5 US",
+        "11.0 US", "11.5 US", "12.0 US", "12.5 US", "13.0 US"
+    };
+
+    var allSizes = standardUsSizes
+        .Concat(sizes.Where(size => !standardUsSizes.Contains(size, StringComparer.OrdinalIgnoreCase)).OrderBy(size => size))
         .ToList();
 
-    var genders = Model.Products
-        .Select(product => product.Gender)
-        .Where(name => !string.IsNullOrWhiteSpace(name))
-        .Distinct(StringComparer.OrdinalIgnoreCase)
-        .OrderBy(name => name)
+    var currentPrices = Model.Products
+        .Select(product => product.SalePrice.HasValue && product.SalePrice.Value > 0 && product.SalePrice.Value < product.RegularPrice
+            ? product.SalePrice.Value
+            : product.RegularPrice)
         .ToList();
+    var minPriceBound = currentPrices.Count > 0 ? (int)Math.Floor(currentPrices.Min()) : 0;
+    var maxPriceBound = currentPrices.Count > 0 ? (int)Math.Ceiling(currentPrices.Max()) : 0;
 
-    var brands = Model.Products
-        .Select(product => product.BrandName)
-        .Where(name => !string.IsNullOrWhiteSpace(name))
-        .Distinct(StringComparer.OrdinalIgnoreCase)
-        .OrderBy(name => name)
-        .Take(6)
-        .ToList();
-
-    var pageTypes = new List<string> { Model.Title };
-
-    if (categories.Count == 0)
+    if (maxPriceBound < minPriceBound)
     {
-        categories.Add(Model.Title);
+        maxPriceBound = minPriceBound;
     }
 
-    if (genders.Count == 0)
+    static string ToToken(string? value)
     {
-        genders.AddRange(["Men", "Women", "Unisex"]);
+        return (value ?? string.Empty).Trim().ToLowerInvariant();
     }
-
-    if (brands.Count == 0)
-    {
-        brands.AddRange(["A", "B", "C", "D"]);
-    }
-
-    var sizeOptions = new[] { "3.0 US", "3.5 US", "4.0 US", "4.5 US", "5.0 US", "5.5 US", "6.0 US", "6.5 US", "7.0 US", "7.5 US", "8.0 US", "8.5 US" };
 }
 
 <div class="shop-page-shell">
@@ -64,42 +57,87 @@
         <aside class="shop-filter-panel" id="shopFilterPanel">
             <div class="shop-filter-group">
                 <h2>Product Type</h2>
-                @foreach (var category in categories)
+                @if (categories.Count == 0)
                 {
-                    <label class="shop-filter-option">
-                        <input type="checkbox" />
-                        <span>@category</span>
-                    </label>
+                    <p class="shop-filter-empty">No product type yet</p>
+                }
+                else
+                {
+                    <div class="shop-filter-options">
+                        @foreach (var category in categories)
+                        {
+                            <label class="shop-filter-option">
+                                <input type="checkbox" class="shop-filter-check" data-filter="category" value="@ToToken(category)" />
+                                <span>@category</span>
+                            </label>
+                        }
+                    </div>
                 }
             </div>
 
             <div class="shop-filter-group">
                 <h2>Gender</h2>
-                @foreach (var gender in genders)
+                @if (genders.Count == 0)
                 {
-                    <label class="shop-filter-option">
-                        <input type="checkbox" />
-                        <span>@gender</span>
-                    </label>
+                    <p class="shop-filter-empty">No gender options</p>
+                }
+                else
+                {
+                    <div class="shop-filter-options" data-collapsible-group data-visible-count="4">
+                        @for (var index = 0; index < genders.Count; index++)
+                        {
+                            var gender = genders[index];
+                            <label class="shop-filter-option @(index >= 4 ? "is-extra" : string.Empty)">
+                                <input type="checkbox" class="shop-filter-check" data-filter="gender" value="@ToToken(gender)" />
+                                <span>@gender</span>
+                            </label>
+                        }
+                    </div>
+                    @if (genders.Count > 4)
+                    {
+                        <button type="button" class="shop-filter-more" data-toggle-more>+ Show more</button>
+                    }
                 }
             </div>
 
             <div class="shop-filter-group">
                 <h2>Brand</h2>
-                @foreach (var brand in brands)
+                @if (brands.Count == 0)
                 {
-                    <label class="shop-filter-option">
-                        <input type="checkbox" />
-                        <span>@brand</span>
-                    </label>
+                    <p class="shop-filter-empty">No brand available</p>
+                }
+                else
+                {
+                    <div class="shop-filter-options" data-collapsible-group data-visible-count="6">
+                        @for (var index = 0; index < brands.Count; index++)
+                        {
+                            var brand = brands[index];
+                            <label class="shop-filter-option @(index >= 6 ? "is-extra" : string.Empty)">
+                                <input type="checkbox" class="shop-filter-check" data-filter="brand" value="@ToToken(brand)" />
+                                <span>@brand</span>
+                            </label>
+                        }
+                    </div>
+                    @if (brands.Count > 6)
+                    {
+                        <button type="button" class="shop-filter-more" data-toggle-more>+ Show more</button>
+                    }
                 }
             </div>
 
             <div class="shop-filter-group">
                 <h2>Price</h2>
                 <div class="shop-price-fields">
-                    <input type="text" value="0,XXX" aria-label="Minimum price" />
-                    <input type="text" value="X,XXX" aria-label="Maximum price" />
+                    <input type="number" id="shopPriceMin" min="@minPriceBound" max="@maxPriceBound" step="1" value="@minPriceBound" placeholder="Min" aria-label="Minimum price" />
+                    <input type="number" id="shopPriceMax" min="@minPriceBound" max="@maxPriceBound" step="1" value="@maxPriceBound" placeholder="Max" aria-label="Maximum price" />
+                </div>
+                <div class="shop-price-range">
+                    <input type="range" id="shopPriceMinRange" min="@minPriceBound" max="@maxPriceBound" step="1" value="@minPriceBound" aria-label="Price range minimum" />
+                    <input type="range" id="shopPriceMaxRange" min="@minPriceBound" max="@maxPriceBound" step="1" value="@maxPriceBound" aria-label="Price range maximum" />
+                </div>
+                <div class="shop-price-range-labels">
+                    <span>$ @minPriceBound.ToString("N0")</span>
+                    <span>$ @maxPriceBound.ToString("N0")</span>
                 </div>
             </div>
 
@@ -108,7 +146,7 @@
                 @foreach (var type in pageTypes)
                 {
                     <label class="shop-filter-option">
-                        <input type="checkbox" />
+                        <input type="checkbox" class="shop-filter-check" data-filter="type" value="@ToToken(type)" />
                         <span>@type</span>
                     </label>
                 }
@@ -116,13 +154,27 @@
 
             <div class="shop-filter-group">
                 <h2>Size</h2>
-                <div class="shop-size-grid">
-                    @foreach (var size in sizeOptions)
-                    {
-                        <button type="button" class="shop-size-chip">@size</button>
-                    }
-                </div>
-                <button type="button" class="shop-filter-more">+ Showmore</button>
+                @if (allSizes.Count == 0)
+                {
+                    <p class="shop-filter-empty">No size data yet</p>
+                }
+                else
+                {
+                    <div class="shop-size-grid">
+                        @foreach (var size in allSizes)
+                        {
+                            var isAvailable = sizes.Contains(size, StringComparer.OrdinalIgnoreCase);
+                            <label class="shop-size-chip @(isAvailable ? string.Empty : "is-unavailable")">
+                                <input type="checkbox" class="shop-filter-check" data-filter="size" value="@ToToken(size)" disabled="@(!isAvailable)" />
+                                <span>@size</span>
+                            </label>
+                        }
+                    </div>
+                }
+            </div>
+
+            <div class="shop-filter-group">
+                <button type="button" class="shop-filter-clear" id="shopClearFilters">Clear all filters</button>
             </div>
         </aside>
 
@@ -131,6 +183,8 @@
             {
                 <div class="shop-results-meta">Search query: @Model.SearchQuery</div>
             }
+
+            <div class="shop-results-meta" id="shopResultsCount">Showing @Model.Products.Count products</div>
 
             @if (Model.Products.Count == 0)
             {
@@ -149,7 +203,14 @@
                         var currentPrice = hasSale ? product.SalePrice!.Value : product.RegularPrice;
 
                         <article class="shop-product-card">
-                            <a asp-controller="Products" asp-action="Product" asp-route-id="@product.ProductId" class="shop-card-media">
+                            <a asp-controller="Products" asp-action="Product" asp-route-id="@product.ProductId" class="shop-card-media"
+                               data-filterable="true"
+                               data-brand="@ToToken(product.BrandName)"
+                               data-category="@ToToken(product.CategoryName)"
+                               data-gender="@ToToken(product.Gender)"
+                                         data-type="@(hasSale ? "on sale" : "regular price")"
+                               data-price="@currentPrice"
+                               data-sizes="@string.Join("|", product.Sizes.Select(ToToken))">
                                 <img src="@product.ImageUrl" alt="@product.Name" />
                             </a>
 
@@ -179,6 +240,15 @@
     (function () {
         const toggle = document.getElementById('shopFilterToggle');
         const layout = document.getElementById('shopCatalogLayout');
+        const resultCounter = document.getElementById('shopResultsCount');
+        const clearButton = document.getElementById('shopClearFilters');
+        const cards = Array.from(document.querySelectorAll('.shop-product-card'));
+        const filterInputs = Array.from(document.querySelectorAll('.shop-filter-check'));
+        const minPriceInput = document.getElementById('shopPriceMin');
+        const maxPriceInput = document.getElementById('shopPriceMax');
+        const minPriceRange = document.getElementById('shopPriceMinRange');
+        const maxPriceRange = document.getElementById('shopPriceMaxRange');
+        const showMoreButtons = Array.from(document.querySelectorAll('[data-toggle-more]'));
 
         if (!toggle || !layout) {
             return;
@@ -189,5 +259,167 @@
             toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
             toggle.classList.toggle('filter-open', isOpen);
         });
+
+        showMoreButtons.forEach(function (button) {
+            button.addEventListener('click', function () {
+                const group = button.previousElementSibling;
+                if (!group) {
+                    return;
+                }
+
+                const expanded = group.classList.toggle('is-expanded');
+                button.textContent = expanded ? '- Show less' : '+ Show more';
+            });
+        });
+
+        const getSelectedValues = function (filterName) {
+            return filterInputs
+                .filter(function (input) {
+                    return input.checked && input.dataset.filter === filterName;
+                })
+                .map(function (input) {
+                    return (input.value || '').toLowerCase();
+                });
+        };
+
+        const normalizePrices = function (source) {
+            const minBound = Number(minPriceInput?.min || 0);
+            const maxBound = Number(maxPriceInput?.max || 0);
+            let minValue = Number(minPriceInput?.value || minBound);
+            let maxValue = Number(maxPriceInput?.value || maxBound);
+
+            minValue = Number.isNaN(minValue) ? minBound : minValue;
+            maxValue = Number.isNaN(maxValue) ? maxBound : maxValue;
+
+            minValue = Math.max(minBound, Math.min(minValue, maxBound));
+            maxValue = Math.max(minBound, Math.min(maxValue, maxBound));
+
+            if (minValue > maxValue) {
+                if (source === 'min') {
+                    maxValue = minValue;
+                } else {
+                    minValue = maxValue;
+                }
+            }
+
+            if (minPriceInput) {
+                minPriceInput.value = String(minValue);
+            }
+
+            if (maxPriceInput) {
+                maxPriceInput.value = String(maxValue);
+            }
+
+            if (minPriceRange) {
+                minPriceRange.value = String(minValue);
+            }
+
+            if (maxPriceRange) {
+                maxPriceRange.value = String(maxValue);
+            }
+        };
+
+        const applyFilters = function () {
+            const selectedCategories = getSelectedValues('category');
+            const selectedGenders = getSelectedValues('gender');
+            const selectedBrands = getSelectedValues('brand');
+            const selectedTypes = getSelectedValues('type');
+            const selectedSizes = getSelectedValues('size');
+            const minPrice = Number(minPriceInput?.value || 0);
+            const maxPrice = Number(maxPriceInput?.value || Number.MAX_SAFE_INTEGER);
+
+            let visibleCount = 0;
+
+            cards.forEach(function (card) {
+                const searchable = card.querySelector('.shop-card-media');
+                const category = (searchable?.dataset.category || '').toLowerCase();
+                const gender = (searchable?.dataset.gender || '').toLowerCase();
+                const brand = (searchable?.dataset.brand || '').toLowerCase();
+                const type = (searchable?.dataset.type || '').toLowerCase();
+                const price = Number(searchable?.dataset.price || 0);
+                const sizes = (searchable?.dataset.sizes || '').split('|').filter(Boolean);
+
+                const categoryOk = selectedCategories.length === 0 || selectedCategories.includes(category);
+                const genderOk = selectedGenders.length === 0 || selectedGenders.includes(gender);
+                const brandOk = selectedBrands.length === 0 || selectedBrands.includes(brand);
+                const typeOk = selectedTypes.length === 0 || selectedTypes.includes(type);
+                const sizeOk = selectedSizes.length === 0 || selectedSizes.some(function (selected) { return sizes.includes(selected); });
+                const minOk = price >= minPrice;
+                const maxOk = price <= maxPrice;
+
+                const visible = categoryOk && genderOk && brandOk && typeOk && sizeOk && minOk && maxOk;
+                card.style.display = visible ? '' : 'none';
+
+                if (visible) {
+                    visibleCount += 1;
+                }
+            });
+
+            if (resultCounter) {
+                resultCounter.textContent = 'Showing ' + visibleCount + ' products';
+            }
+        };
+
+        filterInputs.forEach(function (input) {
+            input.addEventListener('change', applyFilters);
+        });
+
+        if (minPriceInput) {
+            minPriceInput.addEventListener('input', function () {
+                normalizePrices('min');
+                applyFilters();
+            });
+        }
+
+        if (maxPriceInput) {
+            maxPriceInput.addEventListener('input', function () {
+                normalizePrices('max');
+                applyFilters();
+            });
+        }
+
+        if (minPriceRange) {
+            minPriceRange.addEventListener('input', function () {
+                if (minPriceInput) {
+                    minPriceInput.value = minPriceRange.value;
+                }
+
+                normalizePrices('min');
+                applyFilters();
+            });
+        }
+
+        if (maxPriceRange) {
+            maxPriceRange.addEventListener('input', function () {
+                if (maxPriceInput) {
+                    maxPriceInput.value = maxPriceRange.value;
+                }
+
+                normalizePrices('max');
+                applyFilters();
+            });
+        }
+
+        if (clearButton) {
+            clearButton.addEventListener('click', function () {
+                filterInputs.forEach(function (input) {
+                    input.checked = false;
+                });
+
+                if (minPriceInput) {
+                    minPriceInput.value = minPriceInput.min;
+                }
+
+                if (maxPriceInput) {
+                    maxPriceInput.value = maxPriceInput.max;
+                }
+
+                normalizePrices('max');
+
+                applyFilters();
+            });
+        }
+
+        normalizePrices('max');
     })();
 </script>

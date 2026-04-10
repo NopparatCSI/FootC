@@ -17,6 +17,12 @@ public partial class Order
 
     public decimal Discount { get; set; }
 
+    public int? PromotionId { get; set; }
+
+    public string? PromotionCode { get; set; }
+
+    public decimal PromotionDiscountTotal { get; set; }
+
     public string PaymentMethod { get; set; } = null!;
 
     public string PaymentStatus { get; set; } = null!;

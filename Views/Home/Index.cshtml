@@ -1,6 +1,27 @@
-﻿@{
+﻿@model WebApp1.ViewModels.HomeIndexViewModel
+
+@{
     Layout = "_CustomerNavbar";
     ViewData["Title"] = "Home";
+    var pageModel = Model ?? new WebApp1.ViewModels.HomeIndexViewModel();
+    var slideBanners = pageModel.SlideBanners;
+    var categoryBanners = pageModel.CategoryBanners;
+    Func<string, string> categoryBgStyle = key =>
+    {
+        if (categoryBanners.TryGetValue(key, out var img) && !string.IsNullOrEmpty(img))
+            return $"background-image:url('{img}');background-size:cover;background-position:center;";
+        return "";
+    };
+
+    var slide1Images = slideBanners.TryGetValue("banner-slide-1", out var slide1)
+        ? slide1.Where(v => !string.IsNullOrWhiteSpace(v)).ToList()
+        : new List<string>();
+    var slide2Images = slideBanners.TryGetValue("banner-slide-2", out var slide2)
+        ? slide2.Where(v => !string.IsNullOrWhiteSpace(v)).ToList()
+        : new List<string>();
+
+    var slide1First = slide1Images.FirstOrDefault();
+    var slide2First = slide2Images.FirstOrDefault();
 }
 
 @section Styles {
@@ -8,9 +29,11 @@
 }
 
 <div class="customer-index-page">
-    <section class="placeholder-banner banner-lg">
+    <section class="placeholder-banner banner-lg banner-rotator @(slide1Images.Count > 0 ? "has-bg" : "")"
+             data-images="@string.Join('|', slide1Images)"
+             style="@(slide1First != null ? $"background-image:url('{slide1First}');background-size:cover;background-position:center;" : "")">
         <button class="banner-nav"><i class="bi bi-chevron-left"></i></button>
-        <h1>Banner Slide</h1>
+        @* <h1>Banner Slide</h1> *@
         <button class="banner-nav"><i class="bi bi-chevron-right"></i></button>
     </section>
 
@@ -18,60 +41,128 @@
         <div class="product-head">
             <h2>POPPULAR PRODUCT</h2>
             <div class="head-actions">
-                <button><i class="bi bi-chevron-left"></i></button>
-                <button><i class="bi bi-chevron-right"></i></button>
+                <button type="button" data-target="popularScroller" data-direction="prev"><i class="bi bi-chevron-left"></i></button>
+                <button type="button" data-target="popularScroller" data-direction="next"><i class="bi bi-chevron-right"></i></button>
             </div>
         </div>
-        <div class="row row-cols-2 row-cols-md-4 g-4">
-            <div class="col"><div class="product-placeholder"></div></div>
-            <div class="col"><div class="product-placeholder"></div></div>
-            <div class="col"><div class="product-placeholder"></div></div>
-            <div class="col"><div class="product-placeholder"></div></div>
+        <div class="product-scroller" id="popularScroller">
+            @if (pageModel.PopularProducts.Count == 0)
+            {
+                <div class="product-item product-item-full">
+                    <div class="product-empty-state">No products available for homepage yet.</div>
+                </div>
+            }
+            else
+            {
+                @foreach (var product in pageModel.PopularProducts)
+                {
+                    <div class="product-item">
+                        <article class="home-product-card">
+                            <a asp-controller="Products" asp-action="Product" asp-route-id="@product.ProductId" class="home-product-media">
+                                @if (product.DiscountPercent.HasValue && product.DiscountPercent.Value > 0)
+                                {
+                                    <span class="home-product-badge">-@product.DiscountPercent.Value.ToString("0")%</span>
+                                }
+                                <img src="@product.ImageUrl" alt="@product.Name" />
+                            </a>
+                            <div class="home-product-body">
+                                <p class="home-product-brand">@product.Brand</p>
+                                <h3>
+                                    <a asp-controller="Products" asp-action="Product" asp-route-id="@product.ProductId">@product.Name</a>
+                                </h3>
+                                <p class="home-product-category">@product.Category</p>
+                                <div class="home-product-price">
+                                    <strong>฿@product.DisplayPrice.ToString("N2")</strong>
+                                    @if (product.IsOnSale)
+                                    {
+                                        <span>฿@product.RegularPrice.ToString("N2")</span>
+                                    }
+                                </div>
+                            </div>
+                        </article>
+                    </div>
+                }
+            }
         </div>
 
         <div class="product-head mt-4">
             <h2>SALES PRODUCT</h2>
             <div class="head-actions">
-                <button><i class="bi bi-chevron-left"></i></button>
-                <button><i class="bi bi-chevron-right"></i></button>
+                <button type="button" data-target="salesScroller" data-direction="prev"><i class="bi bi-chevron-left"></i></button>
+                <button type="button" data-target="salesScroller" data-direction="next"><i class="bi bi-chevron-right"></i></button>
             </div>
         </div>
-        <div class="row row-cols-2 row-cols-md-4 g-4">
-            <div class="col"><div class="product-placeholder"></div></div>
-            <div class="col"><div class="product-placeholder"></div></div>
-            <div class="col"><div class="product-placeholder"></div></div>
-            <div class="col"><div class="product-placeholder"></div></div>
+        <div class="product-scroller" id="salesScroller">
+            @if (pageModel.SaleProducts.Count == 0)
+            {
+                <div class="product-item product-item-full">
+                    <div class="product-empty-state">No sale products available right now.</div>
+                </div>
+            }
+            else
+            {
+                @foreach (var product in pageModel.SaleProducts)
+                {
+                    <div class="product-item">
+                        <article class="home-product-card">
+                            <a asp-controller="Products" asp-action="Product" asp-route-id="@product.ProductId" class="home-product-media">
+                                @if (product.DiscountPercent.HasValue && product.DiscountPercent.Value > 0)
+                                {
+                                    <span class="home-product-badge">-@product.DiscountPercent.Value.ToString("0")%</span>
+                                }
+                                <img src="@product.ImageUrl" alt="@product.Name" />
+                            </a>
+                            <div class="home-product-body">
+                                <p class="home-product-brand">@product.Brand</p>
+                                <h3>
+                                    <a asp-controller="Products" asp-action="Product" asp-route-id="@product.ProductId">@product.Name</a>
+                                </h3>
+                                <p class="home-product-category">@product.Category</p>
+                                <div class="home-product-price">
+                                    <strong>฿@product.DisplayPrice.ToString("N2")</strong>
+                                    @if (product.IsOnSale)
+                                    {
+                                        <span>฿@product.RegularPrice.ToString("N2")</span>
+                                    }
+                                </div>
+                            </div>
+                        </article>
+                    </div>
+                }
+            }
         </div>
     </section>
 
-    <section class="placeholder-banner banner-md">
+    <section class="placeholder-banner banner-md banner-rotator @(slide2Images.Count > 0 ? "has-bg" : "")"
+             data-images="@string.Join('|', slide2Images)"
+             style="@(slide2First != null ? $"background-image:url('{slide2First}');background-size:cover;background-position:center;" : "")">
         <button class="banner-nav"><i class="bi bi-chevron-left"></i></button>
-        <h2>Banner Slide</h2>
+        @* <h2>Banner Slide</h2> *@
         <button class="banner-nav"><i class="bi bi-chevron-right"></i></button>
     </section>
 
     <section class="category-section">
         <div class="row g-0">
             <div class="col-12 col-md-6">
-                <div class="category-tile">
+                <div class="category-tile" style="@categoryBgStyle("category-new-arrivals")">
                     <h3>New Arrivals</h3>
                     <a asp-controller="Shop" asp-action="NewArrivals">Buy</a>
                 </div>
             </div>
             <div class="col-12 col-md-6">
-                <div class="category-tile">
+                <div class="category-tile" style="@categoryBgStyle("category-sales")">
                     <h3>Sales</h3>
                     <a asp-controller="Shop" asp-action="Sales">Buy</a>
                 </div>
             </div>
             <div class="col-12 col-md-6">
-                <div class="category-tile">
+                <div class="category-tile" style="@categoryBgStyle("category-running")">
                     <h3>Running Shose</h3>
                     <a asp-controller="Shop" asp-action="RunningShoes">Buy</a>
                 </div>
             </div>
             <div class="col-12 col-md-6">
-                <div class="category-tile">
+                <div class="category-tile" style="@categoryBgStyle("category-training")">
                     <h3>Training Shose</h3>
                     <a asp-controller="Shop" asp-action="TrainingShoes">Buy</a>
                 </div>
@@ -79,3 +170,66 @@
         </div>
     </section>
 </div>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const rotators = document.querySelectorAll(".banner-rotator");
+
+            rotators.forEach((rotator) => {
+                const raw = rotator.getAttribute("data-images") || "";
+                const images = raw.split("|").filter(Boolean);
+                if (images.length <= 1) {
+                    return;
+                }
+
+                let index = 0;
+                const applyBackground = () => {
+                    const next = images[index];
+                    rotator.style.backgroundImage = `url('${next}')`;
+                    rotator.style.backgroundSize = "cover";
+                    rotator.style.backgroundPosition = "center";
+                };
+
+                const prevBtn = rotator.querySelector(".banner-nav:first-of-type");
+                const nextBtn = rotator.querySelector(".banner-nav:last-of-type");
+
+                prevBtn?.addEventListener("click", function () {
+                    index = (index - 1 + images.length) % images.length;
+                    applyBackground();
+                });
+
+                nextBtn?.addEventListener("click", function () {
+                    index = (index + 1) % images.length;
+                    applyBackground();
+                });
+
+                setInterval(function () {
+                    index = (index + 1) % images.length;
+                    applyBackground();
+                }, 4000);
+            });
+
+            const productScrollButtons = document.querySelectorAll(".head-actions button[data-target]");
+            productScrollButtons.forEach((button) => {
+                button.addEventListener("click", function () {
+                    const targetId = button.getAttribute("data-target");
+                    const direction = button.getAttribute("data-direction");
+                    if (!targetId || !direction) {
+                        return;
+                    }
+
+                    const scroller = document.getElementById(targetId);
+                    if (!scroller) {
+                        return;
+                    }
+
+                    const item = scroller.querySelector(".product-item");
+                    const step = item ? item.getBoundingClientRect().width + 16 : 320;
+                    const offset = direction === "next" ? step : -step;
+                    scroller.scrollBy({ left: offset, behavior: "smooth" });
+                });
+            });
+        });
+    </script>
+}

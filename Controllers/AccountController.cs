@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WebApp1.Models;
@@ -14,22 +14,80 @@ public class AccountController : Controller
     {
         _db = db;
     }
-    public IActionResult Login()
+    // Function: Login
+    // Purpose: Executes the Login workflow for this module.
+    public IActionResult Login(string? returnUrl = null)
     {
+        ViewBag.ReturnUrl = returnUrl;
+
+        if (HttpContext.Session.GetInt32("CustomerUserId").HasValue)
+        {
+            if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+            {
+                return Redirect(returnUrl);
+            }
+
+            return RedirectToAction("Index", "Home");
+        }
+
         return View();
     }
+
     [HttpPost]
-    public IActionResult Login(LoginUserViewModels data)
+    [ValidateAntiForgeryToken]
+    // Function: Login
+    // Purpose: Executes the Login workflow for this module.
+    public IActionResult Login(LoginUserViewModels data, string? returnUrl = null)
     {
-        string Email, Password;
-        Email = data.Email;
-        Password = data.Password;
-        @ViewBag.Email = Email;
-        @ViewBag.Password = Password;
-        return RedirectToAction("Test1", "Account", new { Email = Email, Password = Password });
+        ViewBag.ReturnUrl = returnUrl;
+
+        var email = (data.Email ?? string.Empty).Trim();
+        var password = (data.Password ?? string.Empty).Trim();
+
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(password))
+        {
+            ModelState.AddModelError(string.Empty, "Please enter email and password.");
+            return View(data);
+        }
+
+        var customer = _db.Customers
+            .AsNoTracking()
+            .FirstOrDefault(c => c.EmailCustomer == email && c.Password == password);
+
+        if (customer == null)
+        {
+            ModelState.AddModelError(string.Empty, "Invalid email or password.");
+            return View(data);
+        }
+
+        HttpContext.Session.SetInt32("CustomerUserId", customer.UserId);
+        HttpContext.Session.SetString("CustomerDisplayName", $"{customer.NameCustomer} {customer.LastnameCustomer}".Trim());
+        HttpContext.Session.SetString("CustomerEmail", customer.EmailCustomer ?? email);
+
+        if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+        {
+            return Redirect(returnUrl);
+        }
+
+        return RedirectToAction("Index", "Home");
+    }
+
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    // Function: Logout
+    // Purpose: Executes the Logout workflow for this module.
+    public IActionResult Logout()
+    {
+        HttpContext.Session.Remove("CustomerUserId");
+        HttpContext.Session.Remove("CustomerDisplayName");
+        HttpContext.Session.Remove("CustomerEmail");
+
+        return RedirectToAction("Index", "Home");
     }
 
     [HttpGet]
+    // Function: Register
+    // Purpose: Executes the Register workflow for this module.
     public IActionResult Register()
     {
         return View();
@@ -37,6 +95,8 @@ public class AccountController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    // Function: Register
+    // Purpose: Executes the Register workflow for this module.
     public IActionResult Register(RegisterViewModel data)
     {
         if (!ModelState.IsValid)
@@ -93,8 +153,11 @@ public class AccountController : Controller
             return View(data);
         }
 
-        return RedirectToAction("Lab9List", "Home");
+        TempData["SuccessMessage"] = "Registration successful. Please log in.";
+        return RedirectToAction("Login", "Account");
     }
+    // Function: ForgotPassword
+    // Purpose: Executes the ForgotPassword workflow for this module.
     public IActionResult ForgotPassword()
     {
         return View();
@@ -102,6 +165,8 @@ public class AccountController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    // Function: ForgotPassword
+    // Purpose: Executes the ForgotPassword workflow for this module.
     public IActionResult ForgotPassword(ForgotPasswordViewModel data)
     {
         if (!ModelState.IsValid)
@@ -113,11 +178,15 @@ public class AccountController : Controller
         return View();
     }
 
+    // Function: Lab4
+    // Purpose: Executes the Lab4 workflow for this module.
     public IActionResult Lab4()
     {
         return View();
     }
 
+    // Function: Lab5
+    // Purpose: Executes the Lab5 workflow for this module.
     public IActionResult Lab5()
     {
         // var user = new LabUserViewModels();
@@ -137,6 +206,8 @@ public class AccountController : Controller
         return View();
     }
     [HttpPost]
+    // Function: Lab5
+    // Purpose: Executes the Lab5 workflow for this module.
     public IActionResult Lab5(LabUserViewModels data)
     {
         string a, b, c;
@@ -149,12 +220,16 @@ public class AccountController : Controller
         return View();
     }
 
+    // Function: Test1
+    // Purpose: Executes the Test1 workflow for this module.
     public IActionResult Test1(string Email, string Password)
     {
         @ViewBag.Email = Email;
         @ViewBag.Password = Password;
         return View();
     }
+    // Function: Index
+    // Purpose: Executes the Index workflow for this module.
     public IActionResult Index()
     {
         string name, language;
@@ -211,7 +286,7 @@ public class AccountController : Controller
         {
             if (scores[i] < 5)
             {
-                lowPointsL.Add("Pattern" + (i + 1) + " มีคะแนน: " + scores[i]);
+                lowPointsL.Add("Pattern" + (i + 1) + " à¸¡à¸µà¸„à¸°à¹à¸™à¸™: " + scores[i]);
             }
         }
 
@@ -220,12 +295,16 @@ public class AccountController : Controller
         return View();
     }
 
+    // Function: Privacy
+    // Purpose: Executes the Privacy workflow for this module.
     public IActionResult Privacy()
     {
         return View();
     }
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+    // Function: Error
+    // Purpose: Executes the Error workflow for this module.
     public IActionResult Error()
     {
         return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });

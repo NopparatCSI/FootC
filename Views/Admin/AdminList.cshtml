@@ -10,9 +10,9 @@
         return roleName switch
         {
             WebApp1.Security.AdminRoles.SuperAdmin => "Super Admin",
-            WebApp1.Security.AdminRoles.CatalogManager => "Catalog Manager",
-            WebApp1.Security.AdminRoles.OrderManager => "Order Manager",
-            _ => "Support"
+            WebApp1.Security.AdminRoles.Admin => "Admin",
+            WebApp1.Security.AdminRoles.Packer => "Packer",
+            _ => "Admin"
         };
     }
 
@@ -21,9 +21,9 @@
         return roleName switch
         {
             WebApp1.Security.AdminRoles.SuperAdmin => "bi-shield-lock-fill",
-            WebApp1.Security.AdminRoles.CatalogManager => "bi-tags-fill",
-            WebApp1.Security.AdminRoles.OrderManager => "bi-bag-check-fill",
-            _ => "bi-headset"
+            WebApp1.Security.AdminRoles.Admin => "bi-tags-fill",
+            WebApp1.Security.AdminRoles.Packer => "bi-bag-check-fill",
+            _ => "bi-tags-fill"
         };
     }
 

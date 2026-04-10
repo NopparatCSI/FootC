@@ -1,0 +1,86 @@
+@model WebApp1.ViewModels.OrdersListViewModel
+
+@{
+    Layout = "_CustomerNavbar";
+    ViewData["Title"] = "Order History";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/ShopPages.css" asp-append-version="true" />
+}
+
+<div class="shop-page-shell shop-checkout-shell">
+    <section class="shop-page-hero shop-utility-hero">
+        <div>
+            <p class="shop-page-eyebrow">Account</p>
+            <h1 class="shop-page-title">Order History</h1>
+            <p class="shop-page-description">Review every order you placed, track status, and open full order details.</p>
+        </div>
+        <a asp-controller="Shop" asp-action="NewArrivals" class="shop-primary-link utility-hero-cta">Continue Shopping</a>
+    </section>
+
+    <section class="utility-kpi-band">
+        <article class="utility-kpi-card">
+            <p>Total Orders</p>
+            <strong>@Model.TotalOrders</strong>
+        </article>
+        <article class="utility-kpi-card">
+            <p>In Progress</p>
+            <strong>@(Model.PendingCount + Model.ProcessingCount + Model.ShippedCount)</strong>
+        </article>
+        <article class="utility-kpi-card">
+            <p>Delivered</p>
+            <strong>@Model.DeliveredCount</strong>
+        </article>
+    </section>
+
+    @if (Model.Orders.Count == 0)
+    {
+        <section class="shop-empty-state">
+            <h2>No orders yet</h2>
+            <p>Once you place an order, it will show up here with its current status and full details.</p>
+            <a asp-controller="Shop" asp-action="NewArrivals" class="shop-primary-link">Browse New Arrivals</a>
+        </section>
+    }
+    else
+    {
+        <section class="order-history-list">
+            @foreach (var order in Model.Orders)
+            {
+                <article class="order-history-card">
+                    <div class="order-history-head">
+                        <div>
+                            <p class="order-history-label">Order Number</p>
+                            <h2>@order.OrderNumber</h2>
+                        </div>
+                        <span class="order-status-badge order-status-badge--@order.Status.ToLowerInvariant()">@order.Status</span>
+                    </div>
+
+                    <div class="order-history-grid">
+                        <div>
+                            <p class="order-history-label">Order Date</p>
+                            <strong>@order.OrderDate.ToString("dd MMM yyyy, HH:mm")</strong>
+                        </div>
+                        <div>
+                            <p class="order-history-label">Items</p>
+                            <strong>@order.ItemCount item(s)</strong>
+                        </div>
+                        <div>
+                            <p class="order-history-label">Payment</p>
+                            <strong>@order.PaymentMethod</strong>
+                        </div>
+                        <div>
+                            <p class="order-history-label">Total</p>
+                            <strong>฿@order.TotalAmount.ToString("N2")</strong>
+                        </div>
+                    </div>
+
+                    <div class="order-history-actions">
+                        <span class="order-payment-badge order-payment-badge--@order.PaymentStatus.ToLowerInvariant()">Payment: @order.PaymentStatus</span>
+                        <a asp-controller="Shop" asp-action="OrderDetail" asp-route-id="@order.OrderId" class="shop-primary-link">View Details</a>
+                    </div>
+                </article>
+            }
+        </section>
+    }
+</div>

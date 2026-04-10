@@ -17,15 +17,41 @@
         var currentController = ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty;
         var currentAction = ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
         var searchQuery = ViewContext.HttpContext.Request.Query["q"].ToString();
+        var customerDisplayName = Context.Session.GetString("CustomerDisplayName");
+        var isCustomerLoggedIn = !string.IsNullOrWhiteSpace(customerDisplayName);
+        var isOrderPage = currentController == "Shop" && (currentAction == "OrderHistory" || currentAction == "OrderDetail");
     }
     <header class="shop-header">
         <div class="promo-bar">
             <div class="promo-inner">
-                <span class="promo-text">PROMOTION TEXT RUN</span>
+                <div class="promo-text">
+                    <button type="button" class="promo-trigger" id="promoTrigger">
+                        <span class="promo-trigger-chip">Live</span>
+                        <span>PROMOTION TEXT RUN</span>
+                        <i class="bi bi-stars"></i>
+                    </button>
+                </div>
                 <div class="promo-links">
-                    <a href="/Account/Login">SIGN IN</a>
-                    <span class="promo-sep">|</span>
-                    <a href="/Account/Register">SIGN UP</a>
+                    @if (isCustomerLoggedIn)
+                    {
+                        <details class="promo-account-menu">
+                            <summary class="promo-account-trigger @(isOrderPage ? "active" : string.Empty)">HI, @customerDisplayName <i class="bi bi-chevron-down"></i></summary>
+                            <div class="promo-account-dropdown">
+                                <a class="@(isOrderPage ? "active" : string.Empty)" asp-controller="Shop" asp-action="OrderHistory">Order History</a>
+                            </div>
+                        </details>
+                        <span class="promo-sep">|</span>
+                        <form asp-controller="Account" asp-action="Logout" method="post" style="display:inline;">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="promo-logout-btn">LOG OUT</button>
+                        </form>
+                    }
+                    else
+                    {
+                        <a href="/Account/Login">SIGN IN</a>
+                        <span class="promo-sep">|</span>
+                        <a href="/Account/Register">SIGN UP</a>
+                    }
                 </div>
             </div>
         </div>
@@ -55,6 +81,45 @@
             </div>
         </div>
     </header>
+
+    <div class="promo-modal" id="promoModal" aria-hidden="true">
+        <div class="promo-modal-backdrop" data-close="promo"></div>
+        <div class="promo-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="promoModalTitle">
+            <button type="button" class="promo-modal-close" id="promoModalClose" aria-label="Close promotion modal">
+                <i class="bi bi-x-lg"></i>
+            </button>
+            <p class="promo-modal-eyebrow">Limited Time Offer</p>
+            <h3 id="promoModalTitle">Unlock your checkout bonus</h3>
+            <p class="promo-modal-copy">Use one of these codes at checkout and copy in one click.</p>
+
+            <div class="promo-code-grid">
+                <article class="promo-code-card">
+                    <p>New Customer</p>
+                    <div class="promo-code-main">
+                        <strong id="promoCodePrimary">WELCOME10</strong>
+                        <button type="button" class="promo-copy-btn" data-copy-target="promoCodePrimary">
+                            <i class="bi bi-copy"></i> Copy
+                        </button>
+                    </div>
+                    <span>10% off (minimum order applies)</span>
+                </article>
+
+                <article class="promo-code-card promo-code-card-alt">
+                    <p>Shipping Bonus</p>
+                    <div class="promo-code-main">
+                        <strong id="promoCodeShipping">FREESHIP</strong>
+                        <button type="button" class="promo-copy-btn" data-copy-target="promoCodeShipping">
+                            <i class="bi bi-copy"></i> Copy
+                        </button>
+                    </div>
+                    <span>Free shipping campaign code</span>
+                </article>
+            </div>
+
+            <p class="promo-copy-feedback" id="promoCopyFeedback" aria-live="polite"></p>
+            <a asp-controller="Shop" asp-action="Checkout" class="promo-modal-cta">Go to Checkout</a>
+        </div>
+    </div>
 
     <main role="main" class="shop-main">
         @RenderBody()
@@ -97,7 +162,74 @@
         </div>
     </footer>
 
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        (function () {
+            const promoTrigger = document.getElementById("promoTrigger");
+            const promoModal = document.getElementById("promoModal");
+            const promoModalClose = document.getElementById("promoModalClose");
+            const promoCopyFeedback = document.getElementById("promoCopyFeedback");
+            const copyButtons = document.querySelectorAll(".promo-copy-btn");
+
+            function setModalState(isOpen) {
+                if (!promoModal) {
+                    return;
+                }
+
+                promoModal.classList.toggle("is-open", isOpen);
+                promoModal.setAttribute("aria-hidden", isOpen ? "false" : "true");
+                document.body.classList.toggle("modal-open", isOpen);
+            }
+
+            promoTrigger?.addEventListener("click", function () {
+                setModalState(true);
+            });
+
+            promoModalClose?.addEventListener("click", function () {
+                setModalState(false);
+            });
+
+            promoModal?.addEventListener("click", function (event) {
+                const target = event.target;
+                if (target instanceof HTMLElement && target.dataset.close === "promo") {
+                    setModalState(false);
+                }
+            });
+
+            document.addEventListener("keydown", function (event) {
+                if (event.key === "Escape" && promoModal?.classList.contains("is-open")) {
+                    setModalState(false);
+                }
+            });
+
+            copyButtons.forEach(function (button) {
+                button.addEventListener("click", async function () {
+                    const targetId = button.getAttribute("data-copy-target");
+                    const codeEl = targetId ? document.getElementById(targetId) : null;
+                    const code = codeEl?.textContent?.trim() || "";
+                    if (!code) {
+                        return;
+                    }
+
+                    try {
+                        await navigator.clipboard.writeText(code);
+                        if (promoCopyFeedback) {
+                            promoCopyFeedback.textContent = "Copied: " + code;
+                        }
+                        button.classList.add("is-copied");
+                        setTimeout(function () {
+                            button.classList.remove("is-copied");
+                        }, 900);
+                    } catch {
+                        if (promoCopyFeedback) {
+                            promoCopyFeedback.textContent = "Unable to copy automatically. Please copy the code manually.";
+                        }
+                    }
+                });
+            });
+        })();
+    </script>
     @RenderSection("Scripts", required: false)
 </body>
 </html>

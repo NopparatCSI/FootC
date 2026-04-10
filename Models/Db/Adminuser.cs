@@ -15,7 +15,7 @@ public partial class Adminuser
 
     public string? Password { get; set; }
 
-    public string RoleName { get; set; } = "Support";
+    public string RoleName { get; set; } = "Admin";
 
     public string? PhonenumberAdmin { get; set; }
 

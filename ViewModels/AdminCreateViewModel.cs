@@ -34,5 +34,5 @@ public class AdminCreateViewModel
     public DateOnly? BirthDate { get; set; }
 
     [Required]
-    public string RoleName { get; set; } = AdminRoles.Support;
+    public string RoleName { get; set; } = AdminRoles.Admin;
 }

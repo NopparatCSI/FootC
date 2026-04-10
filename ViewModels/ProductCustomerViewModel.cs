@@ -4,6 +4,8 @@ public class ProductCustomerViewModel
 {
     public int Id { get; set; }
 
+    public bool IsCustomerLoggedIn { get; set; }
+
     public string Name { get; set; } = string.Empty;
 
     public string Brand { get; set; } = string.Empty;

@@ -21,4 +21,6 @@ public class ShopProductCardViewModel
     public decimal? SalePrice { get; set; }
 
     public decimal? DiscountPercent { get; set; }
+
+    public List<string> Sizes { get; set; } = new();
 }

@@ -1,0 +1,321 @@
+@model WebApp1.ViewModels.CheckoutViewModel
+
+@{
+    Layout = "_CustomerNavbar";
+    ViewData["Title"] = "Checkout";
+}
+
+@section Styles {
+    <link rel="stylesheet" href="~/css/ShopPages.css" asp-append-version="true" />
+}
+
+<div class="shop-page-shell shop-checkout-shell">
+    <section class="shop-page-hero shop-utility-hero">
+        <div>
+            <p class="shop-page-eyebrow">Secure Checkout</p>
+            <h1 class="shop-page-title">Checkout</h1>
+            <p class="shop-page-description">Complete shipping details, choose payment method, and confirm your order.</p>
+        </div>
+        <a asp-controller="Shop" asp-action="Cart" class="shop-primary-link utility-hero-cta">Back to Cart</a>
+    </section>
+
+    <div class="checkout-layout">
+        <section class="checkout-form-card">
+            <h2 class="checkout-title">Shipping Information</h2>
+
+            <form asp-controller="Shop" asp-action="Checkout" method="post" id="checkoutForm" novalidate>
+                @Html.AntiForgeryToken()
+                <input asp-for="CartItemsJson" type="hidden" id="cartItemsJson" />
+                <input asp-for="PaymentMethod" type="hidden" value="COD" />
+
+                <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
+
+                <div class="checkout-grid">
+                    <div>
+                        <label asp-for="FullName" class="checkout-label"></label>
+                        <input asp-for="FullName" class="checkout-input" />
+                        <span asp-validation-for="FullName" class="text-danger small"></span>
+                    </div>
+                    <div>
+                        <label asp-for="Phone" class="checkout-label"></label>
+                        <input asp-for="Phone" class="checkout-input" />
+                        <span asp-validation-for="Phone" class="text-danger small"></span>
+                    </div>
+                    <div>
+                        <label asp-for="Email" class="checkout-label"></label>
+                        <input asp-for="Email" class="checkout-input" />
+                        <span asp-validation-for="Email" class="text-danger small"></span>
+                    </div>
+                    <div>
+                        <label asp-for="PostalCode" class="checkout-label"></label>
+                        <input asp-for="PostalCode" class="checkout-input" />
+                        <span asp-validation-for="PostalCode" class="text-danger small"></span>
+                    </div>
+                    <div class="checkout-col-2">
+                        <label asp-for="AddressLine" class="checkout-label"></label>
+                        <input asp-for="AddressLine" class="checkout-input" />
+                        <span asp-validation-for="AddressLine" class="text-danger small"></span>
+                    </div>
+                    <div>
+                        <label asp-for="District" class="checkout-label"></label>
+                        <input asp-for="District" class="checkout-input" />
+                        <span asp-validation-for="District" class="text-danger small"></span>
+                    </div>
+                    <div>
+                        <label asp-for="Province" class="checkout-label"></label>
+                        <input asp-for="Province" class="checkout-input" />
+                        <span asp-validation-for="Province" class="text-danger small"></span>
+                    </div>
+                    <div class="checkout-col-2">
+                        <label asp-for="Notes" class="checkout-label"></label>
+                        <textarea asp-for="Notes" class="checkout-input checkout-textarea" rows="3"></textarea>
+                        <span asp-validation-for="Notes" class="text-danger small"></span>
+                    </div>
+                    <div class="checkout-col-2">
+                        <label asp-for="PromoCode" class="checkout-label"></label>
+                        <div class="checkout-promo-row">
+                            <input asp-for="PromoCode" class="checkout-input" id="promoCodeInput" placeholder="WELCOME10" />
+                            <button type="button" class="checkout-promo-btn" id="applyPromoBtn">Apply</button>
+                        </div>
+                        <span asp-validation-for="PromoCode" class="text-danger small"></span>
+                        <p id="promoMessage" class="checkout-promo-note"></p>
+                    </div>
+                </div>
+
+                <h3 class="checkout-title mt-4">Payment Method</h3>
+                <div class="payment-method-list">
+                    <label class="payment-method-item payment-method-item--active">
+                        <input type="radio" name="paymentMethodView" checked disabled />
+                        <span>Cash on Delivery (COD)</span>
+                        <em>Available</em>
+                    </label>
+                    <label class="payment-method-item payment-method-item--disabled">
+                        <input type="radio" name="paymentMethodView" disabled />
+                        <span>Bank Transfer</span>
+                        <em>Coming soon</em>
+                    </label>
+                    <label class="payment-method-item payment-method-item--disabled">
+                        <input type="radio" name="paymentMethodView" disabled />
+                        <span>PromptPay</span>
+                        <em>Coming soon</em>
+                    </label>
+                    <label class="payment-method-item payment-method-item--disabled">
+                        <input type="radio" name="paymentMethodView" disabled />
+                        <span>Credit / Debit Cards</span>
+                        <em>Coming soon</em>
+                    </label>
+                    <label class="payment-method-item payment-method-item--disabled">
+                        <input type="radio" name="paymentMethodView" disabled />
+                        <span>Mobile Banking</span>
+                        <em>Coming soon</em>
+                    </label>
+                    <label class="payment-method-item payment-method-item--disabled">
+                        <input type="radio" name="paymentMethodView" disabled />
+                        <span>E-wallets (TrueMoney, ShopeePay)</span>
+                        <em>Coming soon</em>
+                    </label>
+                    <label class="payment-method-item payment-method-item--disabled">
+                        <input type="radio" name="paymentMethodView" disabled />
+                        <span>QR Code</span>
+                        <em>Coming soon</em>
+                    </label>
+                </div>
+
+                <button type="submit" class="shop-primary-link checkout-place-btn">Place Order</button>
+            </form>
+        </section>
+
+        <aside class="checkout-summary" id="checkoutSummary">
+            <h3>Order Summary</h3>
+            <div id="checkoutItems" class="checkout-items"></div>
+            <div class="checkout-summary-row">
+                <span>Subtotal</span>
+                <strong id="checkoutSubtotal">฿0</strong>
+            </div>
+            <div class="checkout-summary-row" id="checkoutDiscountRow" hidden>
+                <span>Promotion Discount</span>
+                <strong id="checkoutDiscount">-฿0</strong>
+            </div>
+            <div class="checkout-summary-row checkout-summary-row--muted">
+                <span>Shipping</span>
+                <span>Calculated after order confirmation</span>
+            </div>
+            <div class="checkout-summary-row checkout-summary-row--total">
+                <span>Total</span>
+                <strong id="checkoutGrandTotal">฿0</strong>
+            </div>
+        </aside>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+<script>
+(function () {
+    const CART_KEY = 'cp_cart';
+    const cartInput = document.getElementById('cartItemsJson');
+    const itemsEl = document.getElementById('checkoutItems');
+    const subtotalEl = document.getElementById('checkoutSubtotal');
+    const discountRowEl = document.getElementById('checkoutDiscountRow');
+    const discountEl = document.getElementById('checkoutDiscount');
+    const grandTotalEl = document.getElementById('checkoutGrandTotal');
+    const promoInput = document.getElementById('promoCodeInput');
+    const applyPromoBtn = document.getElementById('applyPromoBtn');
+    const promoMessageEl = document.getElementById('promoMessage');
+    const checkoutForm = document.getElementById('checkoutForm');
+    const PROMO_PREVIEW_KEY = 'cp_promo_preview';
+
+    let currentSubtotal = 0;
+    let currentDiscount = 0;
+
+    function getCart() {
+        try {
+            const parsed = JSON.parse(localStorage.getItem(CART_KEY) || '[]');
+            return Array.isArray(parsed) ? parsed : [];
+        } catch {
+            return [];
+        }
+    }
+
+    function formatBaht(value) {
+        return '฿' + Number(value || 0).toLocaleString();
+    }
+
+    function renderTotals() {
+        subtotalEl.textContent = formatBaht(currentSubtotal);
+        const total = Math.max(0, currentSubtotal - currentDiscount);
+        grandTotalEl.textContent = formatBaht(total);
+        if (currentDiscount > 0) {
+            discountRowEl.hidden = false;
+            discountEl.textContent = '-'+ formatBaht(currentDiscount);
+        } else {
+            discountRowEl.hidden = true;
+            discountEl.textContent = '-' + formatBaht(0);
+        }
+    }
+
+    function setPromoMessage(message, ok) {
+        if (!promoMessageEl) {
+            return;
+        }
+
+        promoMessageEl.textContent = message || '';
+        promoMessageEl.classList.toggle('is-success', !!ok);
+        promoMessageEl.classList.toggle('is-error', !ok && !!message);
+    }
+
+    function savePromoPreview(payload) {
+        localStorage.setItem(PROMO_PREVIEW_KEY, JSON.stringify(payload));
+    }
+
+    function clearPromoPreview() {
+        localStorage.removeItem(PROMO_PREVIEW_KEY);
+    }
+
+    function tryApplySavedPreview() {
+        try {
+            const parsed = JSON.parse(localStorage.getItem(PROMO_PREVIEW_KEY) || 'null');
+            if (!parsed || !parsed.code || Number(parsed.discount || 0) <= 0) {
+                return;
+            }
+            if (promoInput && !promoInput.value) {
+                promoInput.value = parsed.code;
+            }
+            currentDiscount = Number(parsed.discount || 0);
+            setPromoMessage('Applied: ' + parsed.code, true);
+            renderTotals();
+        } catch {
+            clearPromoPreview();
+        }
+    }
+
+    async function applyPromo() {
+        const code = (promoInput?.value || '').trim();
+        if (!code) {
+            currentDiscount = 0;
+            clearPromoPreview();
+            setPromoMessage('Enter a promo code.', false);
+            renderTotals();
+            return;
+        }
+
+        const url = '/Shop/PreviewPromotion?code=' + encodeURIComponent(code) + '&cartItemsJson=' + encodeURIComponent(cartInput?.value || '[]');
+        applyPromoBtn?.setAttribute('disabled', 'disabled');
+        try {
+            const response = await fetch(url, { method: 'GET' });
+            const result = await response.json();
+            if (!response.ok || !result.ok) {
+                currentDiscount = 0;
+                clearPromoPreview();
+                setPromoMessage(result.message || 'Promo code cannot be applied.', false);
+                renderTotals();
+                return;
+            }
+
+            currentDiscount = Number(result.discount || 0);
+            savePromoPreview({
+                code: result.code || code.toUpperCase(),
+                discount: currentDiscount,
+                promotionType: result.promotionType || '',
+                discountValue: Number(result.discountValue || 0),
+                minOrderAmount: result.minOrderAmount,
+                maxDiscountAmount: result.maxDiscountAmount
+            });
+            setPromoMessage(result.message || 'Promo code applied.', true);
+            if (promoInput && result.code) {
+                promoInput.value = result.code;
+            }
+            renderTotals();
+        } catch {
+            currentDiscount = 0;
+            clearPromoPreview();
+            setPromoMessage('Unable to validate promo code right now.', false);
+            renderTotals();
+        } finally {
+            applyPromoBtn?.removeAttribute('disabled');
+        }
+    }
+
+    const cart = getCart();
+    if (cartInput) {
+        cartInput.value = JSON.stringify(cart);
+    }
+
+    if (!cart.length) {
+        itemsEl.innerHTML = '<p class="checkout-empty-note">Your cart is empty. Please add items first.</p>';
+        checkoutForm.querySelector('.checkout-place-btn').setAttribute('disabled', 'disabled');
+        return;
+    }
+
+    const subtotal = cart.reduce(function (sum, item) {
+        const qty = Math.max(1, Number(item.qty) || 1);
+        const unitPrice = Number(item.unitPrice || 0);
+        return sum + (qty * unitPrice);
+    }, 0);
+    currentSubtotal = subtotal;
+    renderTotals();
+
+    itemsEl.innerHTML = cart.map(function (item) {
+        const qty = Math.max(1, Number(item.qty) || 1);
+        const unitPrice = Number(item.unitPrice || 0);
+        return '<article class="checkout-item">'
+            + '<div>'
+            + '<p class="checkout-item-name">' + (item.name || 'Product') + '</p>'
+            + '<p class="checkout-item-meta">Color: ' + (item.color || '-') + ' | Size: ' + (item.size || '-') + ' | Qty: ' + qty + '</p>'
+            + '</div>'
+            + '<strong>' + formatBaht(unitPrice * qty) + '</strong>'
+            + '</article>';
+    }).join('');
+
+    applyPromoBtn?.addEventListener('click', applyPromo);
+    promoInput?.addEventListener('keydown', function (event) {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            applyPromo();
+        }
+    });
+
+    tryApplySavedPreview();
+})();
+</script>
+}

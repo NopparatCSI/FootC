@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
@@ -22,6 +22,8 @@ public class ProductsController : Controller
         _env = env;
     }
 
+    // Function: Index
+    // Purpose: Executes the Index workflow for this module.
     public IActionResult Index()
     {
         return View();
@@ -30,32 +32,89 @@ public class ProductsController : Controller
     // Customer-facing product page
     // Shows only what customers should see (no cost price / internal status flags / stock numbers)
     [AllowAnonymous]
+    // Function: Product
+    // Purpose: Executes the Product workflow for this module.
     public IActionResult Product(int? id)
     {
-        // Mock page: show only what customers should see.
-        // (No DB read yet — UI demo only)
+        if (!id.HasValue)
+        {
+            return NotFound();
+        }
+
+        var product = _db.Products
+            .AsNoTracking()
+            .Include(p => p.Brand)
+            .Include(p => p.Category)
+            .Include(p => p.ProductImages)
+            .Include(p => p.ProductColors)
+                .ThenInclude(c => c.ProductColorImages)
+            .FirstOrDefault(p => p.ProductId == id.Value && p.Status == "Active");
+
+        if (product == null)
+        {
+            return NotFound();
+        }
+
+        var thumbnail = product.ProductImages
+            .Where(image => string.Equals(image.ImageType, "Thumbnail", StringComparison.OrdinalIgnoreCase))
+            .OrderBy(image => image.SortOrder)
+            .Select(image => image.ImageUrl)
+            .FirstOrDefault()
+            ?? product.ProductImages
+                .OrderBy(image => image.SortOrder)
+                .Select(image => image.ImageUrl)
+                .FirstOrDefault()
+            ?? product.ProductColors
+                .SelectMany(color => color.ProductColorImages)
+                .OrderBy(image => image.SortOrder)
+                .Select(image => image.ImageUrl)
+                .FirstOrDefault()
+            ?? "/images/Running-Shoe-2.jpeg";
+
+        var gallery = product.ProductImages
+            .Where(image => string.Equals(image.ImageType, "Gallery", StringComparison.OrdinalIgnoreCase))
+            .OrderBy(image => image.SortOrder)
+            .Select(image => image.ImageUrl)
+            .ToList();
+
+        gallery.AddRange(
+            product.ProductColors
+                .SelectMany(color => color.ProductColorImages)
+                .OrderBy(image => image.SortOrder)
+                .Select(image => image.ImageUrl));
+
         var vm = new ProductCustomerViewModel
         {
-            Id = id ?? 1,
-            Name = "Example Runner",
-            Brand = "BrandA",
-            Category = "RunningShoes",
-            Gender = "Unisex",
-            RegularPrice = 3200m,
-            SalePrice = 2990m,
-            DiscountPercent = 6.56m,
-            ShortDescription = "Lightweight running shoe with breathable mesh and responsive cushioning.",
-            FullDescription = "รองเท้าวิ่งน้ำหนักเบา ใส่สบาย เหมาะสำหรับการวิ่งระยะสั้นถึงกลาง และการใช้งานประจำวัน",
-            HighlightFeaturesHtml = SanitizeRichText("<ul><li><strong>Lightweight</strong> upper for all-day comfort</li><li>Breathable mesh keeps feet cool</li><li>Responsive cushioning for smooth rides</li></ul>"),
-            TechnicalDetails = "Drop: 10mm; Material: Engineered mesh; Midsole: EVA foam; Outsole: Rubber; Weight: 250g",
-            ThumbnailUrl = "/images/Running-Shoe-2.jpeg",
-            GalleryUrls = new List<string> { "/images/Running-Shoe-2.jpeg", "/images/Untitled-design-5-2.jpg", "/images/images.jpg" },
-            ColorNames = new List<string> { "Black", "White", "Red" }
+            Id = product.ProductId,
+            IsCustomerLoggedIn = HttpContext.Session.GetInt32("CustomerUserId").HasValue,
+            Name = product.ProductName,
+            Brand = product.Brand.BrandName,
+            Category = product.Category.CategoryName,
+            Gender = product.Gender,
+            RegularPrice = product.RegularPrice,
+            SalePrice = product.SalePrice,
+            DiscountPercent = product.DiscountPercent,
+            ShortDescription = product.ShortDescription,
+            FullDescription = product.FullDescription,
+            HighlightFeaturesHtml = SanitizeRichText(product.HighlightFeatures),
+            TechnicalDetails = product.TechnicalDetails,
+            ThumbnailUrl = thumbnail,
+            GalleryUrls = gallery
+                .Where(url => !string.IsNullOrWhiteSpace(url) && !string.Equals(url, thumbnail, StringComparison.OrdinalIgnoreCase))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList(),
+            ColorNames = product.ProductColors
+                .Select(color => color.ColorName)
+                .Where(name => !string.IsNullOrWhiteSpace(name))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList()
         };
 
         return View(vm);
     }
 
+    // Function: SanitizeRichText
+    // Purpose: Executes the SanitizeRichText workflow for this module.
     private static string? SanitizeRichText(string? html)
     {
         if (string.IsNullOrWhiteSpace(html))
@@ -92,6 +151,8 @@ public class ProductsController : Controller
         return sanitized;
     }
 
+    // Function: ProductsList
+    // Purpose: Executes the ProductsList workflow for this module.
     public IActionResult ProductsList()
     {
         var products = _db.Products
@@ -131,6 +192,8 @@ public class ProductsController : Controller
         return View(vm);
     }
 
+    // Function: ProductsEdit
+    // Purpose: Executes the ProductsEdit workflow for this module.
     public IActionResult ProductsEdit(int id)
     {
         var product = _db.Products
@@ -206,11 +269,15 @@ public class ProductsController : Controller
         return View(vm);
     }
 
+    // Function: ProductsView
+    // Purpose: Executes the ProductsView workflow for this module.
     public IActionResult ProductsView()
     {
         return View();
     }
 
+    // Function: ProductsAdd
+    // Purpose: Executes the ProductsAdd workflow for this module.
     public IActionResult ProductsAdd()
     {
         var vm = new ProductAddViewModel
@@ -230,9 +297,11 @@ public class ProductsController : Controller
     }
 
     [HttpPost]
+    // Function: AddProduct
+    // Purpose: Executes the AddProduct workflow for this module.
     public async Task<IActionResult> AddProduct(ProductAddViewModel form, IFormFile? thumbnailImage, List<IFormFile>? galleryImages)
     {
-        // ── Determine status from action button ──
+        // â”€â”€ Determine status from action button â”€â”€
         var status = form.Action == "publish" ? "Active" : (string.IsNullOrEmpty(form.ProductStatus) ? "Draft" : form.ProductStatus);
 
         var product = new Product
@@ -257,7 +326,7 @@ public class ProductsController : Controller
         _db.Products.Add(product);
         await _db.SaveChangesAsync();
 
-        // ── Save thumbnail image ──
+        // â”€â”€ Save thumbnail image â”€â”€
         var uploadsDir = Path.Combine(_env.WebRootPath, "images", "products", product.ProductId.ToString());
         Directory.CreateDirectory(uploadsDir);
 
@@ -278,7 +347,7 @@ public class ProductsController : Controller
             });
         }
 
-        // ── Save gallery images ──
+        // â”€â”€ Save gallery images â”€â”€
         if (galleryImages != null)
         {
             foreach (var file in galleryImages)
@@ -300,7 +369,7 @@ public class ProductsController : Controller
             }
         }
 
-        // ── Save colors & sizes ──
+        // â”€â”€ Save colors & sizes â”€â”€
         if (form.Colors != null)
         {
             foreach (var colorForm in form.Colors)
@@ -337,9 +406,11 @@ public class ProductsController : Controller
     }
 
     [HttpPost]
+    // Function: DeleteProduct
+    // Purpose: Executes the DeleteProduct workflow for this module.
     public IActionResult DeleteProduct(int id)
     {
-        // ค้นหาสินค้าพร้อมข้อมูลที่เกี่ยวข้อง
+        // à¸„à¹‰à¸™à¸«à¸²à¸ªà¸´à¸™à¸„à¹‰à¸²à¸žà¸£à¹‰à¸­à¸¡à¸‚à¹‰à¸­à¸¡à¸¹à¸¥à¸—à¸µà¹ˆà¹€à¸à¸µà¹ˆà¸¢à¸§à¸‚à¹‰à¸­à¸‡
         var product = _db.Products
             .Include(p => p.ProductColors)
                 .ThenInclude(c => c.ProductSizes)
@@ -351,7 +422,7 @@ public class ProductsController : Controller
         if (product == null)
             return Json(new { success = false, message = "Product not found." });
 
-        // ลบข้อมูลที่เกี่ยวข้องทั้งหมด
+        // à¸¥à¸šà¸‚à¹‰à¸­à¸¡à¸¹à¸¥à¸—à¸µà¹ˆà¹€à¸à¸µà¹ˆà¸¢à¸§à¸‚à¹‰à¸­à¸‡à¸—à¸±à¹‰à¸‡à¸«à¸¡à¸”
         foreach (var color in product.ProductColors)
         {
             _db.ProductSizes.RemoveRange(color.ProductSizes);
@@ -362,7 +433,7 @@ public class ProductsController : Controller
         _db.Products.Remove(product);
         _db.SaveChanges();
 
-        // ลบไฟล์รูป
+        // à¸¥à¸šà¹„à¸Ÿà¸¥à¹Œà¸£à¸¹à¸›
         string imgDir = Path.Combine(_env.WebRootPath, "images", "products", id.ToString());
         if (Directory.Exists(imgDir))
             Directory.Delete(imgDir, true);
@@ -370,6 +441,8 @@ public class ProductsController : Controller
         return Json(new { success = true });
     }
 
+    // Function: ProductsCategories
+    // Purpose: Executes the ProductsCategories workflow for this module.
     public IActionResult ProductsCategories()
     {
         var categories = _db.Categories
@@ -391,6 +464,8 @@ public class ProductsController : Controller
     }
 
     [HttpPost]
+    // Function: AddCategory
+    // Purpose: Executes the AddCategory workflow for this module.
     public IActionResult AddCategory([FromBody] CategoryViewModel dto)
     {
         if (string.IsNullOrWhiteSpace(dto.CategoryName))
@@ -435,6 +510,8 @@ public class ProductsController : Controller
     }
 
     [HttpPost]
+    // Function: EditCategory
+    // Purpose: Executes the EditCategory workflow for this module.
     public IActionResult EditCategory([FromBody] CategoryViewModel dto)
     {
         if (string.IsNullOrWhiteSpace(dto.CategoryName))
@@ -478,6 +555,8 @@ public class ProductsController : Controller
     }
 
     [HttpPost]
+    // Function: DeleteCategory
+    // Purpose: Executes the DeleteCategory workflow for this module.
     public IActionResult DeleteCategory([FromBody] CategoryViewModel dto)
     {
         var category = _db.Categories.Find(dto.CategoryId);
@@ -495,6 +574,8 @@ public class ProductsController : Controller
         return Json(new { success = true });
     }
 
+    // Function: ProductsBrand
+    // Purpose: Executes the ProductsBrand workflow for this module.
     public IActionResult ProductsBrand()
     {
         var brands = _db.Brands
@@ -512,6 +593,8 @@ public class ProductsController : Controller
     }
 
     [HttpPost]
+    // Function: AddBrand
+    // Purpose: Executes the AddBrand workflow for this module.
     public IActionResult AddBrand([FromBody] BrandViewModel dto)
     {
         if (string.IsNullOrWhiteSpace(dto.BrandName))
@@ -546,6 +629,8 @@ public class ProductsController : Controller
     }
 
     [HttpPost]
+    // Function: EditBrand
+    // Purpose: Executes the EditBrand workflow for this module.
     public IActionResult EditBrand([FromBody] BrandViewModel dto)
     {
         if (string.IsNullOrWhiteSpace(dto.BrandName))
@@ -579,6 +664,8 @@ public class ProductsController : Controller
     }
 
     [HttpPost]
+    // Function: DeleteBrand
+    // Purpose: Executes the DeleteBrand workflow for this module.
     public IActionResult DeleteBrand([FromBody] BrandViewModel dto)
     {
         var brand = _db.Brands.Find(dto.BrandId);
@@ -592,11 +679,15 @@ public class ProductsController : Controller
     }
 
     [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+    // Function: Error
+    // Purpose: Executes the Error workflow for this module.
     public IActionResult Error()
     {
         return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
     }
 
+    // Function: ProductsInventory
+    // Purpose: Executes the ProductsInventory workflow for this module.
     public IActionResult ProductsInventory()
     {
         var products = _db.Products
@@ -648,6 +739,8 @@ public class ProductsController : Controller
     }
 
     [HttpPost]
+    // Function: UpdateStock
+    // Purpose: Executes the UpdateStock workflow for this module.
     public IActionResult UpdateStock([FromBody] UpdateStockRequest req)
     {
         var size = _db.ProductSizes.Find(req.SizeId);

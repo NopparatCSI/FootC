@@ -3,11 +3,15 @@
 @{
     var controller = ViewContext.RouteData.Values["controller"]?.ToString();
     var action = ViewContext.RouteData.Values["action"]?.ToString();
+    var isCatalogSection = controller == "Product"
+        || controller == "Products"
+        || controller == "Category";
     var adminName = User.Identity?.Name;
     var adminRole = User.FindFirstValue(ClaimTypes.Role) ?? string.Empty;
-    var canManageCatalog = User.IsInRole(AdminRoles.SuperAdmin) || User.IsInRole(AdminRoles.CatalogManager);
-    var canManageOrders = User.IsInRole(AdminRoles.SuperAdmin) || User.IsInRole(AdminRoles.OrderManager);
-    var canManageUsers = User.IsInRole(AdminRoles.SuperAdmin) || User.IsInRole(AdminRoles.Support);
+    var canAccessDashboard = User.IsInRole(AdminRoles.SuperAdmin) || User.IsInRole(AdminRoles.Admin);
+    var canManageCatalog = User.IsInRole(AdminRoles.SuperAdmin) || User.IsInRole(AdminRoles.Admin);
+    var canManageOrders = User.IsInRole(AdminRoles.SuperAdmin) || User.IsInRole(AdminRoles.Packer);
+    var canManageUsers = User.IsInRole(AdminRoles.SuperAdmin) || User.IsInRole(AdminRoles.Admin);
     var canManageAdmins = User.IsInRole(AdminRoles.SuperAdmin);
 }
 
@@ -44,22 +48,25 @@
             <ul class="nav flex-column">
 
                 <!-- Dashboard -->
-                <li class="nav-item">
-                    <a class="nav-link @(controller == "Admin" && action == "Dashboard" ? "active" : "")" asp-controller="Admin"
-                           asp-action="Dashboard">
-                        <i class="bi bi-speedometer2 me-2"></i>
-                        <span class="nav-text">Dashboard</span>
-                    </a>
-                </li>
+                @if (canAccessDashboard)
+                {
+                    <li class="nav-item">
+                        <a class="nav-link @(controller == "Admin" && action == "Dashboard" ? "active" : "")" asp-controller="Admin"
+                               asp-action="Dashboard">
+                            <i class="bi bi-speedometer2 me-2"></i>
+                            <span class="nav-text">Dashboard</span>
+                        </a>
+                    </li>
+                }
 
                 <!-- Products -->
                 @if (canManageCatalog)
                 {
                     <li class="nav-item">
                         <a class="nav-link d-flex justify-content-between align-items-center
-                            @(controller == "Product" || controller == "Products" || controller == "Category" ? "active" : "")"
+                            @(isCatalogSection ? "active" : "")"
                                data-bs-toggle="collapse" href="#productsMenu"
-                               aria-expanded="@(controller == "Product" || controller == "Products" || controller == "Category" ? "true" : "false")">
+                               aria-expanded="@(isCatalogSection ? "true" : "false")">
                             <span class="nav-label">
                                 <i class="bi bi-box-seam me-2"></i>
                                 <span class="nav-text">Products</span>
@@ -68,7 +75,7 @@
                         </a>
 
                         <ul class="collapse nav flex-column ms-4
-                            @(controller == "Product" || controller == "Products" || controller == "Category" ? "show" : "")"
+                            @(isCatalogSection ? "show" : "")"
                             id="productsMenu">
 
                             <li class="nav-item">
@@ -106,6 +113,22 @@
                                 </a>
                             </li>
                         </ul>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link @(controller == "Admin" && action == "BannerManagement" ? "active" : "")"
+                               asp-controller="Admin" asp-action="BannerManagement">
+                            <i class="bi bi-images me-2"></i>
+                            <span class="nav-text">Banner Management</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link @(controller == "Admin" && action == "PromotionManagement" ? "active" : "")"
+                               asp-controller="Admin" asp-action="PromotionManagement">
+                            <i class="bi bi-ticket-perforated me-2"></i>
+                            <span class="nav-text">Promotion Management</span>
+                        </a>
                     </li>
                 }
 
@@ -254,6 +277,7 @@
     </div>
 
     <!-- Bootstrap JS -->
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script>
             (function () {

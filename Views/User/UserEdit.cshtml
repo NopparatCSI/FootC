@@ -2,45 +2,104 @@
 @{
     Layout = "_AdminLayout";
     ViewData["Title"] = "Edit User";
+    var fullName = string.Join(' ', new[] { Model.NameCustomer, Model.LastnameCustomer }
+        .Where(value => !string.IsNullOrWhiteSpace(value)));
+    var initial = string.IsNullOrWhiteSpace(fullName) ? "U" : fullName[0].ToString().ToUpperInvariant();
 }
 
-<link rel="stylesheet" href="~/css/UserEditStyle.css" asp-append-version="true">
+<link rel="stylesheet" href="~/css/UserEditStyle.css" asp-append-version="true" />
 
-<div class="container">
-    <h2>Edit User</h2>
-    <form asp-action="UserEdit" asp-controller="User" method="post">
-        <input asp-for="UserId" type="hidden" />
-
-        <div class="form-group">
-            <label asp-for="NameCustomer"></label>
-            <input asp-for="NameCustomer" class="form-control" />
+<div class="user-edit-page">
+    <div class="user-edit-hero">
+        <div>
+            <span class="hero-eyebrow">Customer Management</span>
+            <h2 class="hero-title">Edit User</h2>
+            <p class="hero-subtitle">Update customer information and keep account records accurate.</p>
         </div>
+        <a class="btn-back" asp-action="Index" asp-controller="User">
+            <i class="bi bi-arrow-left"></i>
+            Back to User List
+        </a>
+    </div>
 
-        <div class="form-group">
-            <label asp-for="LastnameCustomer"></label>
-            <input asp-for="LastnameCustomer" class="form-control" />
-        </div>
+    <div class="edit-shell">
+        <aside class="user-profile-card">
+            <div class="avatar">@initial</div>
+            <p class="profile-name">@(string.IsNullOrWhiteSpace(fullName) ? "Unknown User" : fullName)</p>
+            <p class="profile-id">User ID: @Model.UserId</p>
+            <div class="profile-meta">
+                <div>
+                    <span>Email</span>
+                    <strong>@(string.IsNullOrWhiteSpace(Model.EmailCustomer) ? "-" : Model.EmailCustomer)</strong>
+                </div>
+                <div>
+                    <span>Phone</span>
+                    <strong>@(string.IsNullOrWhiteSpace(Model.Phonenumber) ? "-" : Model.Phonenumber)</strong>
+                </div>
+            </div>
+        </aside>
 
-        <div class="form-group">
-            <label asp-for="EmailCustomer"></label>
-            <input asp-for="EmailCustomer" class="form-control" />
-        </div>
+        <section class="form-card">
+            <div class="card-head">
+                <h3>Account Details</h3>
+                <p>Fields marked with * are required.</p>
+            </div>
 
-        <div class="form-group">
-            <label asp-for="Phonenumber"></label>
-            <input asp-for="Phonenumber" class="form-control" />
-        </div>
+            <form asp-action="UserEdit" asp-controller="User" method="post" class="edit-form">
+                <input asp-for="UserId" type="hidden" />
 
-        <div class="form-group">
-            <label asp-for="BirthDate"></label>
-            <input asp-for="BirthDate" type="date" class="form-control" />
-        </div>
+                <div asp-validation-summary="ModelOnly" class="validation-summary"></div>
 
-        <div class="form-group">
-            <label asp-for="Password"></label>
-            <input asp-for="Password" type="password" class="form-control" />
-        </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label asp-for="NameCustomer">First Name *</label>
+                        <input asp-for="NameCustomer" class="form-input" placeholder="Enter first name" />
+                        <span asp-validation-for="NameCustomer" class="field-error"></span>
+                    </div>
 
-        <button type="submit" class="btn btn-primary">Save Changes</button>
-    </form>
+                    <div class="form-group">
+                        <label asp-for="LastnameCustomer">Last Name *</label>
+                        <input asp-for="LastnameCustomer" class="form-input" placeholder="Enter last name" />
+                        <span asp-validation-for="LastnameCustomer" class="field-error"></span>
+                    </div>
+
+                    <div class="form-group form-group-full">
+                        <label asp-for="EmailCustomer">Email *</label>
+                        <input asp-for="EmailCustomer" class="form-input" placeholder="name@example.com" />
+                        <span asp-validation-for="EmailCustomer" class="field-error"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="Phonenumber">Phone Number</label>
+                        <input asp-for="Phonenumber" class="form-input" placeholder="08x-xxx-xxxx" />
+                        <span asp-validation-for="Phonenumber" class="field-error"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="BirthDate">Birth Date</label>
+                        <input asp-for="BirthDate" type="date" class="form-input" />
+                        <span asp-validation-for="BirthDate" class="field-error"></span>
+                    </div>
+
+                    <div class="form-group form-group-full">
+                        <label asp-for="Password">Password *</label>
+                        <input asp-for="Password" type="password" class="form-input" placeholder="Enter new or existing password" />
+                        <span asp-validation-for="Password" class="field-error"></span>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <a class="btn-secondary" asp-action="Index" asp-controller="User">Cancel</a>
+                    <button type="submit" class="btn-primary">
+                        <i class="bi bi-check2-circle"></i>
+                        Save Changes
+                    </button>
+                </div>
+            </form>
+        </section>
+    </div>
 </div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

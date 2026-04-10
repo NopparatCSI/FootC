@@ -21,7 +21,7 @@ builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy(AdminPolicies.AccessAdminArea, policy =>
         policy.RequireAuthenticatedUser()
-            .RequireRole(AdminRoles.All));
+            .RequireRole(AdminRoles.SuperAdmin, AdminRoles.Admin));
 
     options.AddPolicy(AdminPolicies.ManageAdmins, policy =>
         policy.RequireAuthenticatedUser()
@@ -29,15 +29,15 @@ builder.Services.AddAuthorization(options =>
 
     options.AddPolicy(AdminPolicies.ManageCatalog, policy =>
         policy.RequireAuthenticatedUser()
-            .RequireRole(AdminRoles.SuperAdmin, AdminRoles.CatalogManager));
+            .RequireRole(AdminRoles.SuperAdmin, AdminRoles.Admin));
 
     options.AddPolicy(AdminPolicies.ManageOrders, policy =>
         policy.RequireAuthenticatedUser()
-            .RequireRole(AdminRoles.SuperAdmin, AdminRoles.OrderManager));
+            .RequireRole(AdminRoles.SuperAdmin, AdminRoles.Packer));
 
     options.AddPolicy(AdminPolicies.ManageUsers, policy =>
         policy.RequireAuthenticatedUser()
-            .RequireRole(AdminRoles.SuperAdmin, AdminRoles.Support));
+            .RequireRole(AdminRoles.SuperAdmin, AdminRoles.Admin));
 });
 builder.Services.AddSession(options =>
 {

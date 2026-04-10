@@ -18,8 +18,14 @@
                             <div class="login-subtitle">Sign in to your account</div>
                         </div>
 
+                        @if (TempData["SuccessMessage"] is string successMessage && !string.IsNullOrWhiteSpace(successMessage))
+                        {
+                            <div class="alert alert-success py-2 small" role="alert">@successMessage</div>
+                        }
+
                         <form asp-controller="Account" asp-action="Login" method="post" novalidate>
                             @Html.AntiForgeryToken()
+                            <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl" />
 
                             <div asp-validation-summary="ModelOnly" class="text-danger small mb-3"></div>
 

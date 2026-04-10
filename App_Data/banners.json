@@ -1,0 +1,20 @@
+{
+  "SlideImages": {
+    "banner-slide-1": [
+      "/images/banners/banner-slide-1_865305dddf414975a9b6afd23cd653eb.png",
+      "/images/banners/banner-slide-1_ccc19a461e2f46478a7abef68c9acf3a.png",
+      "/images/banners/banner-slide-1_ba5a34535cd7449da459c425d3565df0.png"
+    ],
+    "banner-slide-2": [
+      "/images/banners/banner-slide-2_ff3f1439f0b642a892414cff71c9ab40.png",
+      "/images/banners/banner-slide-2_c503a0a1c7924c3585bd2e6abce365ad.png",
+      "/images/banners/banner-slide-2_7c77e86843ab4ae391351db8668fc2df.png"
+    ]
+  },
+  "SingleImages": {
+    "category-new-arrivals": null,
+    "category-sales": null,
+    "category-running": null,
+    "category-training": null
+  }
+}

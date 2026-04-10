@@ -40,6 +40,10 @@ public partial class Csi402dbContext : DbContext
 
     public virtual DbSet<ProductSize> ProductSizes { get; set; }
 
+    public virtual DbSet<Promotion> Promotions { get; set; }
+
+    public virtual DbSet<PromotionUsage> PromotionUsages { get; set; }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
         => optionsBuilder.UseMySql("server=localhost;database=csi402db;user=root;password=root;sslmode=None;allowpublickeyretrieval=True", Microsoft.EntityFrameworkCore.ServerVersion.Parse("8.0.43-mysql"));
@@ -86,7 +90,7 @@ public partial class Csi402dbContext : DbContext
                 .HasCharSet("utf8mb3");
             entity.Property(e => e.RoleName)
                 .HasMaxLength(50)
-                .HasDefaultValueSql("'Support'")
+                .HasDefaultValueSql("'Admin'")
                 .HasColumnName("role_name")
                 .UseCollation("utf8mb3_general_ci")
                 .HasCharSet("utf8mb3");
@@ -392,6 +396,70 @@ public partial class Csi402dbContext : DbContext
                 .HasConstraintName("FK_product_sizes_color");
         });
 
+        modelBuilder.Entity<Promotion>(entity =>
+        {
+            entity.HasKey(e => e.PromotionId).HasName("PRIMARY");
+
+            entity.ToTable("promotions");
+
+            entity.HasIndex(e => e.Code, "UX_promotions_code").IsUnique();
+
+            entity.HasIndex(e => new { e.Status, e.StartAt, e.EndAt }, "IX_promotions_status_time");
+
+            entity.HasIndex(e => e.Priority, "IX_promotions_priority");
+
+            entity.Property(e => e.PromotionId).HasColumnName("promotion_id");
+            entity.Property(e => e.Code)
+                .HasMaxLength(50)
+                .HasColumnName("code");
+            entity.Property(e => e.Name)
+                .HasMaxLength(150)
+                .HasColumnName("name");
+            entity.Property(e => e.Description)
+                .HasColumnType("text")
+                .HasColumnName("description");
+            entity.Property(e => e.PromotionType)
+                .HasColumnType("enum('Percent','FixedAmount','FreeShipping')")
+                .HasColumnName("promotion_type");
+            entity.Property(e => e.DiscountValue)
+                .HasPrecision(10, 2)
+                .HasColumnName("discount_value");
+            entity.Property(e => e.MinOrderAmount)
+                .HasPrecision(10, 2)
+                .HasColumnName("min_order_amount");
+            entity.Property(e => e.MaxDiscountAmount)
+                .HasPrecision(10, 2)
+                .HasColumnName("max_discount_amount");
+            entity.Property(e => e.StartAt)
+                .HasColumnType("datetime")
+                .HasColumnName("start_at");
+            entity.Property(e => e.EndAt)
+                .HasColumnType("datetime")
+                .HasColumnName("end_at");
+            entity.Property(e => e.UsageLimitTotal).HasColumnName("usage_limit_total");
+            entity.Property(e => e.UsageLimitPerUser).HasColumnName("usage_limit_per_user");
+            entity.Property(e => e.IsStackable).HasColumnName("is_stackable");
+            entity.Property(e => e.Priority)
+                .HasDefaultValueSql("'100'")
+                .HasColumnName("priority");
+            entity.Property(e => e.Status)
+                .HasColumnType("enum('Draft','Active','Paused','Expired')")
+                .HasDefaultValueSql("'Draft'")
+                .HasColumnName("status");
+            entity.Property(e => e.CreatedBy)
+                .HasMaxLength(20)
+                .HasColumnName("created_by");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnType("datetime")
+                .HasColumnName("created_at");
+            entity.Property(e => e.UpdatedAt)
+                .ValueGeneratedOnAddOrUpdate()
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnType("datetime")
+                .HasColumnName("updated_at");
+        });
+
         modelBuilder.Entity<Order>(entity =>
         {
             entity.HasKey(e => e.OrderId).HasName("PRIMARY");
@@ -409,6 +477,13 @@ public partial class Csi402dbContext : DbContext
             entity.Property(e => e.TotalAmount).HasPrecision(18, 2).HasColumnName("total_amount");
             entity.Property(e => e.ShippingFee).HasPrecision(18, 2).HasColumnName("shipping_fee");
             entity.Property(e => e.Discount).HasPrecision(18, 2).HasColumnName("discount");
+            entity.Property(e => e.PromotionId).HasColumnName("promotion_id");
+            entity.Property(e => e.PromotionCode)
+                .HasMaxLength(50)
+                .HasColumnName("promotion_code");
+            entity.Property(e => e.PromotionDiscountTotal)
+                .HasPrecision(18, 2)
+                .HasColumnName("promotion_discount_total");
             entity.Property(e => e.PaymentMethod).HasMaxLength(50).HasColumnName("payment_method");
             entity.Property(e => e.PaymentStatus)
                 .HasColumnType("enum('Pending','Paid','Failed')")
@@ -434,6 +509,56 @@ public partial class Csi402dbContext : DbContext
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.Restrict)
                 .HasConstraintName("FK_orders_customer");
+
+            entity.HasOne<Promotion>()
+                .WithMany()
+                .HasForeignKey(d => d.PromotionId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("FK_orders_promotion");
+        });
+
+        modelBuilder.Entity<PromotionUsage>(entity =>
+        {
+            entity.HasKey(e => e.UsageId).HasName("PRIMARY");
+
+            entity.ToTable("promotion_usages");
+
+            entity.HasIndex(e => e.PromotionId, "IX_promotion_usages_promotion");
+            entity.HasIndex(e => e.UserId, "IX_promotion_usages_user");
+            entity.HasIndex(e => e.OrderId, "IX_promotion_usages_order");
+
+            entity.Property(e => e.UsageId).HasColumnName("usage_id");
+            entity.Property(e => e.PromotionId).HasColumnName("promotion_id");
+            entity.Property(e => e.OrderId).HasColumnName("order_id");
+            entity.Property(e => e.UserId).HasColumnName("user_id");
+            entity.Property(e => e.PromotionCode)
+                .HasMaxLength(50)
+                .HasColumnName("promotion_code");
+            entity.Property(e => e.DiscountAmount)
+                .HasPrecision(10, 2)
+                .HasColumnName("discount_amount");
+            entity.Property(e => e.UsedAt)
+                .HasColumnType("datetime")
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("used_at");
+
+            entity.HasOne<Promotion>()
+                .WithMany()
+                .HasForeignKey(d => d.PromotionId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("FK_promotion_usages_promotion");
+
+            entity.HasOne<Order>()
+                .WithMany()
+                .HasForeignKey(d => d.OrderId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("FK_promotion_usages_order");
+
+            entity.HasOne<Customer>()
+                .WithMany()
+                .HasForeignKey(d => d.UserId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("FK_promotion_usages_customer");
         });
 
         modelBuilder.Entity<OrderItem>(entity =>

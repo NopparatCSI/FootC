@@ -9,4 +9,236 @@
     <link rel="stylesheet" href="~/css/ShopPages.css" asp-append-version="true" />
 }
 
-<partial name="_ShopUtilityPage" model="Model" />
+<div class="shop-page-shell shop-utility-shell shop-utility-shell--cart">
+    <section class="shop-page-hero shop-utility-hero">
+        <div>
+            <p class="shop-page-eyebrow">@Model.Eyebrow</p>
+            <h1 class="shop-page-title">@Model.Title</h1>
+            <p class="shop-page-description">@Model.Description</p>
+        </div>
+        <a asp-controller="@Model.ActionController" asp-action="@Model.ActionName" class="shop-primary-link utility-hero-cta">@Model.ActionText</a>
+    </section>
+
+    <section class="utility-kpi-band">
+        <article class="utility-kpi-card">
+            <p>Items in bag</p>
+            <strong id="cartCount">0</strong>
+        </article>
+        <article class="utility-kpi-card">
+            <p>Estimated total</p>
+            <strong id="cartKpiTotal">฿0</strong>
+        </article>
+        <article class="utility-kpi-card">
+            <p>Shipping</p>
+            <strong>Free over ฿2,500</strong>
+        </article>
+    </section>
+
+    <section class="shop-utility-panel">
+        <h2>My Bag</h2>
+        <p>@Model.Message</p>
+    </section>
+
+    <div class="cart-layout">
+        <section class="cart-list" id="cartList"></section>
+
+        <aside class="cart-summary" id="cartSummary" hidden>
+            <div class="cart-summary-row">
+                <span>Subtotal</span>
+                <strong id="cartTotal">฿0</strong>
+            </div>
+            <div class="cart-summary-row" id="cartDiscountRow" hidden>
+                <span>Promotion</span>
+                <span id="cartDiscount">-฿0</span>
+            </div>
+            <div class="cart-summary-row cart-summary-row--muted">
+                <span>Shipping</span>
+                <span>Calculated at checkout</span>
+            </div>
+            <div class="cart-summary-row cart-summary-row--total">
+                <span>Estimated payable</span>
+                <strong id="cartGrandTotal">฿0</strong>
+            </div>
+            <a asp-controller="Shop" asp-action="Checkout" class="shop-primary-link cart-checkout-btn">Checkout</a>
+        </aside>
+    </div>
+
+    <section class="shop-empty-state" id="cartEmpty" hidden>
+        <h2>Your cart is empty</h2>
+        <p>Add products from any product page and they will show up here.</p>
+        <a asp-controller="Shop" asp-action="NewArrivals" class="shop-primary-link">Browse New Arrivals</a>
+    </section>
+</div>
+
+@section Scripts {
+<script>
+(function () {
+    const CART_KEY = 'cp_cart';
+    const catalog = @Html.Raw(System.Text.Json.JsonSerializer.Serialize(Model.RecommendedProducts));
+    const normalizedCatalog = (catalog || []).map(function (product) {
+        return {
+            productId: String(product.ProductId ?? product.productId ?? ''),
+            name: product.Name ?? product.name ?? '',
+            brandName: product.BrandName ?? product.brandName ?? '',
+            gender: product.Gender ?? product.gender ?? '',
+            imageUrl: product.ImageUrl ?? product.imageUrl ?? '/images/Running-Shoe-2.jpeg',
+            regularPrice: Number(product.RegularPrice ?? product.regularPrice ?? 0),
+            salePrice: product.SalePrice ?? product.salePrice
+        };
+    });
+
+    const listEl = document.getElementById('cartList');
+    const emptyEl = document.getElementById('cartEmpty');
+    const summaryEl = document.getElementById('cartSummary');
+    const totalEl = document.getElementById('cartTotal');
+    const discountRowEl = document.getElementById('cartDiscountRow');
+    const discountEl = document.getElementById('cartDiscount');
+    const grandTotalEl = document.getElementById('cartGrandTotal');
+    const countEl = document.getElementById('cartCount');
+    const kpiTotalEl = document.getElementById('cartKpiTotal');
+    const PROMO_PREVIEW_KEY = 'cp_promo_preview';
+
+    function getCart() {
+        try {
+            const parsed = JSON.parse(localStorage.getItem(CART_KEY) || '[]');
+            return Array.isArray(parsed) ? parsed : [];
+        } catch {
+            return [];
+        }
+    }
+
+    function saveCart(items) {
+        localStorage.setItem(CART_KEY, JSON.stringify(items));
+    }
+
+    function getUnitPrice(item, matchedProduct) {
+        if (typeof item.unitPrice === 'number' && item.unitPrice > 0) {
+            return item.unitPrice;
+        }
+        if (!matchedProduct) return 0;
+        const hasSale = matchedProduct.salePrice && matchedProduct.salePrice > 0 && matchedProduct.salePrice < matchedProduct.regularPrice;
+        return hasSale ? Number(matchedProduct.salePrice) : Number(matchedProduct.regularPrice);
+    }
+
+    function buildViewItem(item) {
+        const match = normalizedCatalog.find(p => p.productId === String(item.productId));
+        return {
+            key: item.key,
+            productId: String(item.productId),
+            name: item.name || match?.name || 'Product',
+            brandName: item.brandName || match?.brandName || '',
+            gender: item.gender || match?.gender || '',
+            imageUrl: item.imageUrl || match?.imageUrl || '/images/Running-Shoe-2.jpeg',
+            qty: Math.max(1, Number(item.qty) || 1),
+            size: item.size || '-',
+            color: item.color || '-',
+            unitPrice: getUnitPrice(item, match)
+        };
+    }
+
+    function formatBaht(value) {
+        return '฿' + Number(value || 0).toLocaleString();
+    }
+
+    function getPromoPreview() {
+        try {
+            const parsed = JSON.parse(localStorage.getItem(PROMO_PREVIEW_KEY) || 'null');
+            return parsed && typeof parsed === 'object' ? parsed : null;
+        } catch {
+            return null;
+        }
+    }
+
+    function render() {
+        const cart = getCart();
+        const viewItems = cart.map(buildViewItem);
+
+        if (viewItems.length === 0) {
+            listEl.innerHTML = '';
+            emptyEl.hidden = false;
+            summaryEl.hidden = true;
+            if (countEl) countEl.textContent = '0';
+            if (kpiTotalEl) kpiTotalEl.textContent = '฿0';
+            return;
+        }
+
+        emptyEl.hidden = true;
+        summaryEl.hidden = false;
+
+        listEl.innerHTML = viewItems.map(function (item) {
+            const lineTotal = item.unitPrice * item.qty;
+            return '<article class="cart-item">'
+                + '<a class="cart-item-media" href="/Products/Product?id=' + item.productId + '"><img src="' + item.imageUrl + '" alt="' + item.name + '"></a>'
+                + '<div class="cart-item-body">'
+                + '<p class="cart-item-meta">' + item.brandName + ' · ' + item.gender + '</p>'
+                + '<h2 class="cart-item-title"><a href="/Products/Product?id=' + item.productId + '">' + item.name + '</a></h2>'
+                + '<p class="cart-item-variant">Color: ' + item.color + ' | Size: ' + item.size + '</p>'
+                + '<div class="cart-item-footer">'
+                + '<div class="cart-qty" data-key="' + item.key + '">'
+                + '<button type="button" class="cart-qty-btn" data-act="minus">−</button>'
+                + '<span class="cart-qty-value">' + item.qty + '</span>'
+                + '<button type="button" class="cart-qty-btn" data-act="plus">+</button>'
+                + '</div>'
+                + '<span class="cart-item-price">' + formatBaht(lineTotal) + '</span>'
+                + '<button type="button" class="cart-remove-btn" data-key="' + item.key + '">Remove</button>'
+                + '</div>'
+                + '</div>'
+                + '</article>';
+        }).join('');
+
+        const total = viewItems.reduce(function (sum, item) {
+            return sum + (item.unitPrice * item.qty);
+        }, 0);
+
+        const promo = getPromoPreview();
+        const discount = Math.max(0, Math.min(total, Number(promo?.discount || 0)));
+        const grandTotal = Math.max(0, total - discount);
+
+        totalEl.textContent = formatBaht(total);
+        if (discount > 0) {
+            discountRowEl.hidden = false;
+            discountEl.textContent = '-' + formatBaht(discount);
+        } else {
+            discountRowEl.hidden = true;
+            discountEl.textContent = '-' + formatBaht(0);
+        }
+        grandTotalEl.textContent = formatBaht(grandTotal);
+        if (countEl) {
+            const totalCount = viewItems.reduce(function (sum, item) { return sum + item.qty; }, 0);
+            countEl.textContent = String(totalCount);
+        }
+        if (kpiTotalEl) kpiTotalEl.textContent = formatBaht(grandTotal);
+
+        listEl.querySelectorAll('.cart-qty').forEach(function (block) {
+            const key = block.dataset.key;
+            block.querySelectorAll('.cart-qty-btn').forEach(function (button) {
+                button.addEventListener('click', function () {
+                    const act = button.dataset.act;
+                    const next = getCart().map(function (item) {
+                        if (item.key !== key) return item;
+                        const currentQty = Math.max(1, Number(item.qty) || 1);
+                        item.qty = act === 'plus' ? currentQty + 1 : Math.max(1, currentQty - 1);
+                        return item;
+                    });
+                    saveCart(next);
+                    render();
+                });
+            });
+        });
+
+        listEl.querySelectorAll('.cart-remove-btn').forEach(function (button) {
+            button.addEventListener('click', function () {
+                const key = button.dataset.key;
+                const next = getCart().filter(function (item) {
+                    return item.key !== key;
+                });
+                saveCart(next);
+                render();
+            });
+        });
+    }
+
+    render();
+})();
+</script>
+}

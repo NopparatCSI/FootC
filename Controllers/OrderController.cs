@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Text;
@@ -21,6 +21,8 @@ namespace WebApp1.Controllers
         }
 
         // GET /Order/OrdersList
+        // Function: OrdersList
+        // Purpose: Executes the OrdersList workflow for this module.
         public IActionResult OrdersList()
         {
             var orders = _context.Orders
@@ -51,6 +53,8 @@ namespace WebApp1.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        // Function: AdvanceStatus
+        // Purpose: Executes the AdvanceStatus workflow for this module.
         public IActionResult AdvanceStatus(int orderId)
         {
             var order = _context.Orders.FirstOrDefault(o => o.OrderId == orderId);
@@ -66,6 +70,8 @@ namespace WebApp1.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        // Function: CyclePaymentStatus
+        // Purpose: Executes the CyclePaymentStatus workflow for this module.
         public IActionResult CyclePaymentStatus(int orderId)
         {
             var order = _context.Orders.FirstOrDefault(o => o.OrderId == orderId);
@@ -81,6 +87,8 @@ namespace WebApp1.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        // Function: UpdateTracking
+        // Purpose: Executes the UpdateTracking workflow for this module.
         public IActionResult UpdateTracking(int orderId, string? shippingMethod, string? trackingNumber)
         {
             var order = _context.Orders.FirstOrDefault(o => o.OrderId == orderId);
@@ -96,6 +104,8 @@ namespace WebApp1.Controllers
         }
 
         [HttpGet]
+        // Function: PrintInvoice
+        // Purpose: Executes the PrintInvoice workflow for this module.
         public IActionResult PrintInvoice(int id)
         {
             var order = _context.Orders
@@ -153,6 +163,8 @@ namespace WebApp1.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        // Function: RefundOrder
+        // Purpose: Executes the RefundOrder workflow for this module.
         public IActionResult RefundOrder(int orderId)
         {
             var order = _context.Orders.FirstOrDefault(o => o.OrderId == orderId);
@@ -176,6 +188,8 @@ namespace WebApp1.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
+        // Function: DuplicateOrder
+        // Purpose: Executes the DuplicateOrder workflow for this module.
         public IActionResult DuplicateOrder(int orderId)
         {
             var source = _context.Orders
@@ -221,6 +235,8 @@ namespace WebApp1.Controllers
         }
 
         [HttpGet]
+        // Function: ExportOrdersCsv
+        // Purpose: Executes the ExportOrdersCsv workflow for this module.
         public IActionResult ExportOrdersCsv()
         {
             var rows = _context.Orders
@@ -262,6 +278,8 @@ namespace WebApp1.Controllers
         }
 
         // GET /Order/OrderStatus?id=1
+            // Function: OrderStatus
+            // Purpose: Executes the OrderStatus workflow for this module.
             public IActionResult OrderStatus(int? id)
         {
                 if (!id.HasValue || id.Value <= 0)
@@ -319,7 +337,9 @@ namespace WebApp1.Controllers
             return View(vm);
         }
 
-        // ── Timeline builder ─────────────────────────────────────────────────
+        // â”€â”€ Timeline builder â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        // Function: BuildTimeline
+        // Purpose: Executes the BuildTimeline workflow for this module.
         private static List<OrderTimelineStep> BuildTimeline(string status, DateTime orderDate, DateTime? updatedAt)
         {
             var steps = new[] { "Pending", "Processing", "Shipped", "Delivered" };
@@ -358,6 +378,8 @@ namespace WebApp1.Controllers
             return list;
         }
 
+        // Function: GetNextOrderStatus
+        // Purpose: Executes the GetNextOrderStatus workflow for this module.
         private static string GetNextOrderStatus(string current)
         {
             var idx = Array.IndexOf(OrderStatuses, current);
@@ -369,6 +391,8 @@ namespace WebApp1.Controllers
             return OrderStatuses[idx + 1];
         }
 
+        // Function: GetNextPaymentStatus
+        // Purpose: Executes the GetNextPaymentStatus workflow for this module.
         private static string GetNextPaymentStatus(string current)
         {
             var idx = Array.IndexOf(PaymentStatuses, current);
@@ -380,6 +404,8 @@ namespace WebApp1.Controllers
             return PaymentStatuses[idx + 1];
         }
 
+        // Function: GenerateNextOrderNumber
+        // Purpose: Executes the GenerateNextOrderNumber workflow for this module.
         private string GenerateNextOrderNumber()
         {
             var seed = DateTime.Now.ToString("yyyyMMddHHmmss");

@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WebApp1.Models.Db;
 using WebApp1.Security;
@@ -15,18 +15,24 @@ public class UserController : Controller
         _context = context;
     }
 
+    // Function: Index
+    // Purpose: Executes the Index workflow for this module.
     public IActionResult Index()
     {
         var customers = _context.Customers.ToList();
         return View("UserList", customers);
     }
 
+    // Function: UserList
+    // Purpose: Executes the UserList workflow for this module.
     public IActionResult UserList()
     {
         var customers = _context.Customers.ToList();
         return View(customers);
     }
 
+    // Function: UserEdit
+    // Purpose: Executes the UserEdit workflow for this module.
     public IActionResult UserEdit(int id)
     {
         var customer = _context.Customers.FirstOrDefault(c => c.UserId == id);
@@ -39,6 +45,8 @@ public class UserController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
+    // Function: UserEdit
+    // Purpose: Executes the UserEdit workflow for this module.
     public IActionResult UserEdit(Customer data)
     {
         var customer = _context.Customers.FirstOrDefault(c => c.UserId == data.UserId);
