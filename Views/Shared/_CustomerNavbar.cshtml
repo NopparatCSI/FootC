@@ -67,10 +67,70 @@
                     <a class="@((currentController == "Shop" && currentAction == "Women") ? "active" : string.Empty)" asp-controller="Shop" asp-action="Women">Women</a>
                 </nav>
                 <div class="nav-actions">
-                    <form class="nav-search" role="search" asp-controller="Shop" asp-action="Search" method="get">
+                    <form class="nav-search" role="search" asp-controller="Shop" asp-action="Search" method="get" autocomplete="off" style="position:relative;">
                         <i class="bi bi-search" aria-hidden="true"></i>
-                        <input type="search" name="q" value="@searchQuery" placeholder="Search" aria-label="Search" />
+                        <input type="search" id="navbarSearchInput" name="q" value="@searchQuery" placeholder="Search" aria-label="Search" autocomplete="off" />
+                        <div id="navbarSearchDropdown" class="search-suggestion-dropdown" style="display:none;"></div>
                     </form>
+                    <style>
+
+                    </style>
+                    <script>
+                    (function(){
+                        const input = document.getElementById('navbarSearchInput');
+                        const dropdown = document.getElementById('navbarSearchDropdown');
+                        let lastQuery = '';
+                        let blurTimeout = null;
+                        input.addEventListener('input', async function() {
+                            const q = input.value.trim();
+                            lastQuery = q;
+                            if (!q) {
+                                dropdown.style.display = 'none';
+                                dropdown.innerHTML = '';
+                                return;
+                            }
+                            try {
+                                const resp = await fetch(`/Shop/SearchSuggestions?q=${encodeURIComponent(q)}`);
+                                if (!resp.ok) return;
+                                const html = await resp.text();
+                                if (input.value.trim() !== lastQuery) return;
+                                if (!html) {
+                                    dropdown.style.display = 'none';
+                                    dropdown.innerHTML = '';
+                                    return;
+                                }
+                                dropdown.innerHTML = html;
+                                dropdown.style.display = 'block';
+                            } catch {}
+                        });
+                        input.addEventListener('keydown', function(e) {
+                            if (dropdown.style.display !== 'block') return;
+                            if (e.key === 'Escape') {
+                                dropdown.style.display = 'none';
+                                dropdown.innerHTML = '';
+                            }
+                        });
+                        input.addEventListener('blur', function() {
+                            blurTimeout = setTimeout(() => {
+                                dropdown.style.display = 'none';
+                            }, 120);
+                        });
+                        input.addEventListener('focus', function() {
+                            if (dropdown.innerHTML && input.value.trim()) {
+                                dropdown.style.display = 'block';
+                            }
+                        });
+                        dropdown.addEventListener('mousedown', function(e) {
+                            // allow click-through to link
+                            if (blurTimeout) clearTimeout(blurTimeout);
+                        });
+                        document.addEventListener('click', function(e) {
+                            if (!dropdown.contains(e.target) && e.target !== input) {
+                                dropdown.style.display = 'none';
+                            }
+                        });
+                    })();
+                    </script>
                     <a class="icon-btn" asp-controller="Shop" asp-action="Wishlist" aria-label="Favorites">
                         <i class="bi bi-heart" aria-hidden="true"></i>
                     </a>

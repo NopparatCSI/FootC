@@ -794,6 +794,25 @@ public class ShopController : Controller
 
         return new CheckoutLineItemsResult(lineItems, subtotal, errors);
     }
+        // GET: /Shop/SearchSuggestions?q=xxx
+        [HttpGet]
+        public IActionResult SearchSuggestions(string? q)
+        {
+            var keyword = q?.Trim() ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(keyword))
+                return Content("");
+
+            var products = _db.Products
+                .AsNoTracking()
+                .Include(p => p.ProductImages)
+                .Where(p => p.Status == "Active" && p.ProductName.Contains(keyword))
+                .OrderBy(p => p.ProductName)
+                .Take(8)
+                .ToList();
+
+            var html = string.Join("", products.Select(p => $@"<a href='/Products/Product/{p.ProductId}' class='suggestion-card-link'><div class='suggestion-card'><img src='{(p.ProductImages.FirstOrDefault(img => img.ImageType == "Thumbnail")?.ImageUrl ?? p.ProductImages.FirstOrDefault()?.ImageUrl ?? "/images/Running-Shoe-2.jpeg")}' alt='{p.ProductName}' class='suggestion-card-img'/><div class='suggestion-card-info'><div class='suggestion-card-title'>{p.ProductName}</div></div></div></a>"));
+            return Content(html, "text/html");
+        }
 
     private PromotionEvaluationResult EvaluatePromotion(string? promoCode, decimal subtotal, int customerUserId)
     {

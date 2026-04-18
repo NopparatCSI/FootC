@@ -301,7 +301,7 @@ public class ProductsController : Controller
     // Purpose: Executes the AddProduct workflow for this module.
     public async Task<IActionResult> AddProduct(ProductAddViewModel form, IFormFile? thumbnailImage, List<IFormFile>? galleryImages)
     {
-        // â”€â”€ Determine status from action button â”€â”€
+        //Determine status from action button
         var status = form.Action == "publish" ? "Active" : (string.IsNullOrEmpty(form.ProductStatus) ? "Draft" : form.ProductStatus);
 
         var product = new Product
@@ -326,7 +326,7 @@ public class ProductsController : Controller
         _db.Products.Add(product);
         await _db.SaveChangesAsync();
 
-        // â”€â”€ Save thumbnail image â”€â”€
+        //Save thumbnail image
         var uploadsDir = Path.Combine(_env.WebRootPath, "images", "products", product.ProductId.ToString());
         Directory.CreateDirectory(uploadsDir);
 
@@ -347,7 +347,7 @@ public class ProductsController : Controller
             });
         }
 
-        // â”€â”€ Save gallery images â”€â”€
+        // Save gallery images
         if (galleryImages != null)
         {
             foreach (var file in galleryImages)
@@ -369,7 +369,7 @@ public class ProductsController : Controller
             }
         }
 
-        // â”€â”€ Save colors & sizes â”€â”€
+        //Save colors & sizes
         if (form.Colors != null)
         {
             foreach (var colorForm in form.Colors)
@@ -410,7 +410,6 @@ public class ProductsController : Controller
     // Purpose: Executes the DeleteProduct workflow for this module.
     public IActionResult DeleteProduct(int id)
     {
-        // à¸„à¹‰à¸™à¸«à¸²à¸ªà¸´à¸™à¸„à¹‰à¸²à¸žà¸£à¹‰à¸­à¸¡à¸‚à¹‰à¸­à¸¡à¸¹à¸¥à¸—à¸µà¹ˆà¹€à¸à¸µà¹ˆà¸¢à¸§à¸‚à¹‰à¸­à¸‡
         var product = _db.Products
             .Include(p => p.ProductColors)
                 .ThenInclude(c => c.ProductSizes)
@@ -422,7 +421,6 @@ public class ProductsController : Controller
         if (product == null)
             return Json(new { success = false, message = "Product not found." });
 
-        // à¸¥à¸šà¸‚à¹‰à¸­à¸¡à¸¹à¸¥à¸—à¸µà¹ˆà¹€à¸à¸µà¹ˆà¸¢à¸§à¸‚à¹‰à¸­à¸‡à¸—à¸±à¹‰à¸‡à¸«à¸¡à¸”
         foreach (var color in product.ProductColors)
         {
             _db.ProductSizes.RemoveRange(color.ProductSizes);
@@ -433,7 +431,6 @@ public class ProductsController : Controller
         _db.Products.Remove(product);
         _db.SaveChanges();
 
-        // à¸¥à¸šà¹„à¸Ÿà¸¥à¹Œà¸£à¸¹à¸›
         string imgDir = Path.Combine(_env.WebRootPath, "images", "products", id.ToString());
         if (Directory.Exists(imgDir))
             Directory.Delete(imgDir, true);
