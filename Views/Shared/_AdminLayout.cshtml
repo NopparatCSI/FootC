@@ -115,21 +115,7 @@
                         </ul>
                     </li>
 
-                    <li class="nav-item">
-                        <a class="nav-link @(controller == "Admin" && action == "BannerManagement" ? "active" : "")"
-                               asp-controller="Admin" asp-action="BannerManagement">
-                            <i class="bi bi-images me-2"></i>
-                            <span class="nav-text">Banner Management</span>
-                        </a>
-                    </li>
-
-                    <li class="nav-item">
-                        <a class="nav-link @(controller == "Admin" && action == "PromotionManagement" ? "active" : "")"
-                               asp-controller="Admin" asp-action="PromotionManagement">
-                            <i class="bi bi-ticket-perforated me-2"></i>
-                            <span class="nav-text">Promotion Management</span>
-                        </a>
-                    </li>
+                    // ...existing code...
                 }
 
                 <!-- Orders -->
@@ -194,6 +180,26 @@
                                asp-controller="Admin" asp-action="AdminList">
                             <i class="bi bi-person-gear me-2"></i>
                             <span class="nav-text">Admin List</span>
+                        </a>
+                    </li>
+                }
+
+                @* Banner Management & Promotion Management moved below Admin List *@
+                @if (canManageCatalog)
+                {
+                    <li class="nav-item">
+                        <a class="nav-link @(controller == "Admin" && action == "BannerManagement" ? "active" : "")"
+                               asp-controller="Admin" asp-action="BannerManagement">
+                            <i class="bi bi-images me-2"></i>
+                            <span class="nav-text">Banner Management</span>
+                        </a>
+                    </li>
+
+                    <li class="nav-item">
+                        <a class="nav-link @(controller == "Admin" && action == "PromotionManagement" ? "active" : "")"
+                               asp-controller="Admin" asp-action="PromotionManagement">
+                            <i class="bi bi-ticket-perforated me-2"></i>
+                            <span class="nav-text">Promotion Management</span>
                         </a>
                     </li>
                 }

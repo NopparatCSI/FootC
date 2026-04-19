@@ -83,7 +83,7 @@ public class ShopController : Controller
             "Menswear",
             "Men",
             "Shop the current men-specific assortment and unisex pairs styled for everyday wear.",
-            product => string.Equals(product.Gender, "Men", StringComparison.OrdinalIgnoreCase),
+            product => string.Equals(product.Gender, "Men", StringComparison.OrdinalIgnoreCase) || string.Equals(product.Gender, "UNISEX", StringComparison.OrdinalIgnoreCase),
             products => products.OrderByDescending(product => product.UpdatedAt ?? product.CreatedAt));
 
         return View(vm);
@@ -97,7 +97,7 @@ public class ShopController : Controller
             "Womenswear",
             "Women",
             "Explore women-focused fits and standout performance pairs from the latest lineup.",
-            product => string.Equals(product.Gender, "Women", StringComparison.OrdinalIgnoreCase),
+            product => string.Equals(product.Gender, "Women", StringComparison.OrdinalIgnoreCase) || string.Equals(product.Gender, "UNISEX", StringComparison.OrdinalIgnoreCase),
             products => products.OrderByDescending(product => product.UpdatedAt ?? product.CreatedAt));
 
         return View(vm);

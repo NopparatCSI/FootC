@@ -734,6 +734,89 @@ public class ProductsController : Controller
 
         return View(vm);
     }
+    [HttpPost]
+    // Function: EditProduct
+    // Purpose: Updates an existing product with new data from the edit form.
+    public async Task<IActionResult> EditProduct(ProductEditViewModel form, IFormFile? thumbnailImage, List<IFormFile>? galleryImages)
+    {
+        var product = _db.Products
+            .Include(p => p.ProductImages)
+            .Include(p => p.ProductColors)
+                .ThenInclude(c => c.ProductSizes)
+            .Include(p => p.ProductColors)
+                .ThenInclude(c => c.ProductColorImages)
+            .FirstOrDefault(p => p.ProductId == form.ProductId);
+
+        if (product == null)
+            return NotFound();
+
+        // Update basic fields
+        product.ProductName = form.ProductName;
+        product.Sku = form.ProductSKU;
+        product.BrandId = form.ProductBrand;
+        product.CategoryId = form.ProductCategory;
+        product.Gender = form.ProductGender;
+        product.Status = form.ProductStatus;
+        product.RegularPrice = form.RegularPrice;
+        product.SalePrice = form.SalePrice;
+        product.CostPrice = form.CostPrice;
+        product.ShortDescription = form.ShortDescription;
+        product.FullDescription = form.FullDescription;
+        product.HighlightFeatures = form.HighlightFeatures;
+        product.TechnicalDetails = form.TechnicalDetails;
+        product.ShowOnHomepage = form.ShowOnHomepage;
+
+        // Update thumbnail image if provided
+        var uploadsDir = Path.Combine(_env.WebRootPath, "images", "products", product.ProductId.ToString());
+        Directory.CreateDirectory(uploadsDir);
+        if (thumbnailImage != null && thumbnailImage.Length > 0)
+        {
+            // Remove old thumbnail
+            var oldThumbs = product.ProductImages.Where(i => i.ImageType == "Thumbnail").ToList();
+            _db.ProductImages.RemoveRange(oldThumbs);
+
+            var thumbName = "thumb_" + Guid.NewGuid() + Path.GetExtension(thumbnailImage.FileName);
+            var thumbPath = Path.Combine(uploadsDir, thumbName);
+            using (var fs = new FileStream(thumbPath, FileMode.Create))
+                await thumbnailImage.CopyToAsync(fs);
+
+            _db.ProductImages.Add(new ProductImage
+            {
+                ProductId = product.ProductId,
+                ImageUrl = "/images/products/" + product.ProductId + "/" + thumbName,
+                ImageType = "Thumbnail",
+                SortOrder = 0
+            });
+        }
+
+        // Update gallery images if provided (append new ones)
+        if (galleryImages != null)
+        {
+            int sortOrder = product.ProductImages.Where(i => i.ImageType == "Gallery").Count();
+            foreach (var file in galleryImages)
+            {
+                if (file.Length == 0) continue;
+                sortOrder++;
+                var galleryName = "gallery_" + Guid.NewGuid() + Path.GetExtension(file.FileName);
+                var galleryPath = Path.Combine(uploadsDir, galleryName);
+                using (var fs = new FileStream(galleryPath, FileMode.Create))
+                    await file.CopyToAsync(fs);
+
+                _db.ProductImages.Add(new ProductImage
+                {
+                    ProductId = product.ProductId,
+                    ImageUrl = "/images/products/" + product.ProductId + "/" + galleryName,
+                    ImageType = "Gallery",
+                    SortOrder = sortOrder
+                });
+            }
+        }
+
+        // (Optional) Update colors and sizes if needed (not implemented here for brevity)
+
+        await _db.SaveChangesAsync();
+        return RedirectToAction("ProductsList");
+    }
 
     [HttpPost]
     // Function: UpdateStock
@@ -750,3 +833,4 @@ public class ProductsController : Controller
         return Json(new { success = true, stockQuantity = size.StockQuantity });
     }
 }
+
