@@ -38,6 +38,7 @@ publish/
 
 # Generated docs
 FolderMarkdown/
+db-schema.txt
 
 # Database
 *.mdf
